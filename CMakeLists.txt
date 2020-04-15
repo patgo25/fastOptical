@@ -30,13 +30,14 @@ endif()
 # Setup include directory for this project
 #
 include(${Geant4_USE_FILE})
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 #----------------------------------------------------------------------------
 # Locate sources and headers for this project
 # NB: headers are included so they will show up in IDEs
 # DJS: In this particular case we have no headers,
 # but I leave it here for generality
-file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cc)
+file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 #----------------------------------------------------------------------------
 # Add the executable, and link it to the Geant4 libraries

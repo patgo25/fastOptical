@@ -26,6 +26,10 @@
 #include "G4tgbVolumeMgr.hh"
 #include "G4tgrMessenger.hh"
 
+#include "G4OpticalPhysics.hh"
+#include "OpNoviceDetectorConstruction.hh"
+#include "G4OpBoundaryProcess.hh"
+
 #include "g4root.hh"
 #include "g4xml.hh"
 #include "g4csv.hh"
@@ -232,8 +236,92 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       man->AddNtupleRow();
     }
 
-    void UserSteppingAction(const G4Step *step) {
+    void UserSteppingAction(const G4Step *step) { 
+	
+	int verbosity = 4;
+
+		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
+	
+
+		/* ----------------- TEST */
+	if(step->GetPostStepPoint()->GetPhysicalVolume()==NULL){
+		if(verbosity>0){G4cout << "    Oh. @ End of World..." << G4endl;}
+		
+	}else{		//do this to prevent crash @ end of world
+		
+
+		G4String actualVolume = step->GetPostStepPoint()->GetPhysicalVolume()->GetName();
+    //Suche den G4OpBoundaryProcess:
+    G4OpBoundaryProcess* boundary_proc=NULL;
+    G4ProcessManager* proc_man = track->GetDefinition()->GetProcessManager();
+    int proc_num = proc_man->GetProcessListLength();
+    G4ProcessVector* proc_vec = proc_man->GetProcessList();
+    for(int i = 0; i < proc_num; i++){
+        if((*proc_vec)[i]->GetProcessName()=="OpBoundary"){
+            boundary_proc = (G4OpBoundaryProcess*)(*proc_vec)[i];
+            break;
+        }
+    }
+    if(boundary_proc &&
+    track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()){
+        G4OpBoundaryProcessStatus boundaryStatus=boundary_proc->GetStatus();
+        switch(boundaryStatus){
+        case Absorption:
+            /*Do Nothing... */
+			if(verbosity>3){G4cout << "Photon absorbed @ boundary of "<<actualVolume << G4endl;}
+            break;
+        case Detection:{ 
+			//old way of adding per hand; should no longer be needed by now
+			//G4SDManager* localSDman = G4SDManager::GetSDMpointer();
+            //PMTConstruction::notifyPMTSD(step, localSDman);
+			if(verbosity>3){G4cout << "Photon detected @ boundary of "<<actualVolume << G4endl;}
+			}
+			break;
+		case FresnelReflection:
+            if(verbosity>3)G4cout << "FresnelReflection" << G4endl;
+            break;
+		case FresnelRefraction:
+            if(verbosity>3)G4cout << "FresnelRefraction" << G4endl;
+            break;
+        case TotalInternalReflection:
+            if(verbosity>3)G4cout << "TotalInternalReflection" << G4endl;
+            break;
+        case LambertianReflection:
+            if(verbosity>3)G4cout << "LambertianReflection" << G4endl;
+            break;
+        case LobeReflection:
+            if(verbosity>3)G4cout << "LobeReflection" << G4endl;
+            break;
+        case SpikeReflection:
+            if(verbosity>3)G4cout << "SpikeReflection" << G4endl;
+            break;
+        case BackScattering:
+            if(verbosity>3)G4cout << "BackScattering" << G4endl;
+            break;
+        case StepTooSmall:
+            if(verbosity>3)G4cout << "The step is too small." << G4endl;
+            break;
+        case NoRINDEX:
+            if(verbosity>-1){G4cout<<"WARNING: missing refractive Index for boundary "
+								<<actualVolume<< G4endl;}
+            break;
+		case Undefined:
+            if(verbosity>3)G4cout << "The step is undefined." << G4endl;
+            break;	
+		case NotAtBoundary:
+            if(verbosity>3)G4cout << "NotAtBoundary" << G4endl;
+            break;
+		case SameMaterial:
+            if(verbosity>3)G4cout << "SameMaterial" << G4endl;
+            break;
+        default:
+			if(verbosity>3)G4cout << "Unknown Photon-boundary-Action @ "<<actualVolume <<": "<<boundaryStatus<< G4endl;
+            break;
+        }
+    }}
+
+		/*  TEST --------------------- */
 
       if(!man->IsOpenFile()) {
         // need to create the ntuple before opening the file in order to avoid
@@ -467,7 +555,17 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
 
     void SetNewValue(G4UIcommand *command, G4String newValues) {
       if(command == fPhysListCmd) {
-        SetUserInitialization((new G4PhysListFactory)->GetReferencePhysList(newValues));
+		G4VModularPhysicsList* gvmpl = (new G4PhysListFactory)->GetReferencePhysList(newValues);
+		G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
+  		gvmpl->RegisterPhysics( opticalPhysics );		//it's public: it's allowed
+  		opticalPhysics->SetWLSTimeProfile("delta");
+  		opticalPhysics->SetScintillationYieldFactor(1.0);
+ 		opticalPhysics->SetScintillationExcitationRatio(0.0);
+  		opticalPhysics->SetMaxNumPhotonsPerStep(100);
+  		opticalPhysics->SetMaxBetaChangePerStep(10.0);
+  		opticalPhysics->SetTrackSecondariesFirst(kCerenkov,true);
+  		opticalPhysics->SetTrackSecondariesFirst(kScintillation,true);
+        SetUserInitialization(gvmpl);
         SetUserAction(new G4SimplePrimaryGeneratorAction); // must come after phys list
         SetUserAction(new G4SimpleSteppingAction); // must come after phys list
       }
@@ -476,9 +574,13 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
         string filename;
         string validate;
         iss >> filename >> validate;
-        G4GDMLParser parser;
-        parser.Read(filename, validate == "1" || validate == "true" || validate == "True");
-        SetUserInitialization(new G4SimpleDetectorConstruction(parser.GetWorldVolume()));
+		if(filename == "OP_NOVICE"){
+			SetUserInitialization(new OpNoviceDetectorConstruction());
+		}else{
+		    G4GDMLParser parser;
+		    parser.Read(filename, validate == "1" || validate == "true" || validate == "True");
+		    SetUserInitialization(new G4SimpleDetectorConstruction(parser.GetWorldVolume()));
+		}
       }
       else if(command == fTGDetectorCmd) {
         new G4tgrMessenger;

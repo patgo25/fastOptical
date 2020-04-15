@@ -29,9 +29,7 @@
 # via the setVolID command
 # Example setting a full volume name (exact match):
 /g4simple/setVolID geDetector_PV 1
-# Example using a regular expression to match multiple volumes, extract an
-# integer from the name, and set it as the volID
-#/g4simple/setVolID .*Detector([0-9]*).* $1
+# Unfortunately, you have to provide all exact matches, since ancient RHEL7's gcc 4.8.x not fully supporting C++11
 # To get all steps in all volumes, comment out all setVolID commands (removes
 # all volume IDs from output), or uncomment the following line to keep the
 # volume IDs:

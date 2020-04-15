@@ -51,7 +51,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     EOption fOption;
     bool fRecordAllSteps;
 
-    vector< pair<regex,string> > fPatternPairs;
+    vector< pair<string,string> > fPatternPairs;	//have to throw out regex due to ancient gcc 4.8.x not supporting it
  
     G4int fNEvents;
     G4int fEventNumber;
@@ -149,7 +149,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         string pattern;
         string replacement;
         iss >> pattern >> replacement;
-        fPatternPairs.push_back(pair<regex,string>(regex(pattern),replacement));
+        fPatternPairs.push_back(pair<string,string>(pattern,replacement));
       }
       if(command == fOutputFormatCmd) {
         // also set recommended options.
@@ -313,8 +313,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       if(id == 0 && fPatternPairs.size() > 0) {
         string name = (vpv == NULL) ? "NULL" : vpv->GetName();
         for(auto& pp : fPatternPairs) {
-          if(regex_match(name, pp.first)) {
-            string replaced = regex_replace(name,pp.first,pp.second);
+          if(name == pp.first) {
+            string replaced = pp.second;
 	    cout << "Setting ID for " << name << " to " << replaced << endl;
             int id_new = stoi(replaced);
             if (id_new == 0 || id_new == -1) {

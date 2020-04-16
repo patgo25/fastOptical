@@ -29,6 +29,7 @@
 #include "G4OpticalPhysics.hh"
 #include "OpNoviceDetectorConstruction.hh"
 #include "G4OpBoundaryProcess.hh"
+#include "MapRunAction.hh"
 
 #include "g4root.hh"
 #include "g4xml.hh"
@@ -80,8 +81,10 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
     map<G4VPhysicalVolume*, int> fVolIDMap;
 
+	MapRunAction* mra;
+
   public:
-    G4SimpleSteppingAction() : fNEvents(0), fEventNumber(0) {
+    G4SimpleSteppingAction(MapRunAction* mra) : fNEvents(0), fEventNumber(0), mra(mra) {
       ResetVars(); 
 
       fVolIDCmd = new G4UIcommand("/g4simple/setVolID", this);
@@ -238,7 +241,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
     void UserSteppingAction(const G4Step *step) { 
 	
-	int verbosity = 4;
+	int verbosity = 2;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -246,7 +249,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
 		/* ----------------- TEST */
 	if(step->GetPostStepPoint()->GetPhysicalVolume()==NULL){
-		if(verbosity>0){G4cout << "    Oh. @ End of World..." << G4endl;}
+		if(verbosity>2){G4cout << "    Oh. @ End of World..." << G4endl;}
 		
 	}else{		//do this to prevent crash @ end of world
 		
@@ -276,6 +279,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 			//G4SDManager* localSDman = G4SDManager::GetSDMpointer();
             //PMTConstruction::notifyPMTSD(step, localSDman);
 			if(verbosity>3){G4cout << "Photon detected @ boundary of "<<actualVolume << G4endl;}
+			mra->increment(0);	//TODO: get ID of volume!!!
 			}
 			break;
 		case FresnelReflection:
@@ -480,7 +484,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       if(fOption == kStepWise) WriteRow(man);
     }
 
-};
+};		//END of Stepping Action Class Definition/Declaration
 
 
 class G4SimplePrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
@@ -556,6 +560,7 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
     void SetNewValue(G4UIcommand *command, G4String newValues) {
       if(command == fPhysListCmd) {
 		G4VModularPhysicsList* gvmpl = (new G4PhysListFactory)->GetReferencePhysList(newValues);
+		//now let's manually patch in optical physics!
 		G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
   		gvmpl->RegisterPhysics( opticalPhysics );		//it's public: it's allowed
   		opticalPhysics->SetWLSTimeProfile("delta");
@@ -567,7 +572,9 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
   		opticalPhysics->SetTrackSecondariesFirst(kScintillation,true);
         SetUserInitialization(gvmpl);
         SetUserAction(new G4SimplePrimaryGeneratorAction); // must come after phys list
-        SetUserAction(new G4SimpleSteppingAction); // must come after phys list
+		MapRunAction* mra = new MapRunAction(10);	//TODO: how many volumes?
+		SetUserAction(mra);
+        SetUserAction(new G4SimpleSteppingAction(mra)); // must come after phys list
       }
       else if(command == fDetectorCmd) {
         istringstream iss(newValues);

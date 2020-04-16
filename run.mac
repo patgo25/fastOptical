@@ -10,7 +10,7 @@
 
 # Set GDML file name
 # The bool after the file name turns validation on / off
-/g4simple/setDetectorGDML geCounter.gdml false
+/g4simple/setDetectorGDML OP_NOVICE
 
 # Set up output. Choose a format:
 /g4simple/setOutputFormat csv
@@ -47,12 +47,15 @@
 
 # Set up gps after /run/initialize
 # This is for 208Tl events distributed throughout the "source" volume
-/gps/particle ion
-/gps/ion 81 208 0 0
-/gps/energy 0 MeV
-/gps/pos/shape Sphere
-/gps/pos/radius 2 mm
-/gps/pos/centre 0 0 5 cm
-/gps/pos/confine source_PV
+#/gps/particle ion
+#/gps/ion 81 208 0 0
+#/gps/energy 0 MeV
+#/gps/pos/shape Sphere
+#/gps/pos/radius 2 mm
+#/gps/pos/centre 0 0 5 cm
+#/gps/pos/confine source_PV
+/gps/particle opticalphoton
+/gps/polarization 1 0 0
 
-/run/beamOn 10
+/run/beamOn 10000
+/run/beamOn 10000

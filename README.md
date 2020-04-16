@@ -1,8 +1,9 @@
-# Some fancy LAr simulation for checking efficiency of LAr veto in L200 lookingat WLSR scanning attenuation lengths while still looking a bit into WLSR dimensions but never touching LAr veto dimensions. That we will do for L1000 ;)
+# Some fancy LAr simulation for checkiang efficiency of LAr veto in L200 scanning attenuation lengths while still looking a bit into WLSR dimensions but never touching LAr veto dimensions. That we will do for L1000 ;)
 
 TODO: 1. Change title.
 
 My Idea for naming/simulating convention:
+
 0. Simulation Campaign: set of several simulation programs running in parallel (or serial) and scanning individual voxels of the geometry for one fixed attenuation/WLSR size/LAr veto (the latter we swore to never touch)
 1. RunSeries: All which is covered in one single program execution. I suspect to pack several voxels into one RunSeries to minimize overhead to start a large number of single jobs.
 2. Run: =G4Run, i.e. one execution of /run/beamOn with a fixed nr of events to be simulated. ParticleGun setting (--> position, i.e. voxel) is fixed (save maybe for direction change or potential distribution within one voxel) as well as all the rest. Sure we don't touch LAr veto here either.

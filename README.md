@@ -1,4 +1,4 @@
-# Some fancy LAr simulation for checkiang efficiency of LAr veto in L200 scanning attenuation lengths while still looking a bit into WLSR dimensions but never touching LAr veto dimensions. That we will do for L1000 ;)
+# Some fancy LAr simulation for checking efficiency of LAr veto in L200, scanning attenuation lengths while still looking a bit into WLSR dimensions but never touching LAr veto dimensions. That we will do for L1000 ;)
 
 TODO: 1. Change title.
 

@@ -63,6 +63,9 @@ protected:
 	G4Material* steel_mat;
 	G4Material* TPB_mat;
 
+	//Optical properties
+	G4double LArAttVUV;
+
 	//primäre Dimensionen (zwischenwerte werden in CostructDetector() angelegt und berechnet)
 	//alle Längen sind NICHT halbiert
 	G4double world_len, world_wid, world_height;//Längen Welt (in x, y, z)
@@ -97,7 +100,12 @@ protected:
 	G4double wslrTPBThickness;
 	G4double wslrHeight;
 
-
+	//optical stuff
+	G4double lambdaE;
+	G4double lArAbsVUV;
+	G4double lArAbsVis;
+	G4double lArWL;
+	G4double tpbWL;
 
 	void ConstructCryostat();
 	void FillLAr();
@@ -107,6 +115,12 @@ protected:
 	void BuildWSLRTetra();
 	void BuildWSLRTPB();
 	//void BuildWSLRChimney();
+	void BuildOptics();
+
+	//optical functions
+	G4double LArRefIndex(G4double lambda);
+	G4double LArEpsilon(G4double lambda);
+	G4double LArRayLength(G4double lambda, G4double temp);
 };
 
 #endif

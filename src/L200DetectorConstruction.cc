@@ -22,7 +22,7 @@
 #include "G4LogicalBorderSurface.hh"
 #include "G4LogicalSkinSurface.hh"
 #include "G4OpticalSurface.hh"
-
+#include "G4SurfaceProperty.hh"
 #include "G4VisAttributes.hh"
 #include "G4Color.hh"
 
@@ -37,7 +37,7 @@
 #include "G4Transform3D.hh"
 
 #include <cmath>
-
+using namespace CLHEP;
 // = = = = = = = = = = = KONSTRUKTOR & DESTRUKTOR = = = = = = = = = = = = = =
 
 L200DetectorConstruction::L200DetectorConstruction()
@@ -58,6 +58,7 @@ L200DetectorConstruction::L200DetectorConstruction()
 	copper_mat		= NULL;
 	tetraTex_mat		= NULL;
 	TPB_mat			= NULL;
+
 
 
 	InitializeDimensions();
@@ -99,14 +100,21 @@ void L200DetectorConstruction::InitializeDimensions(){
 	outerShroudHeight = 1500*mm;
 
 	//WSLR values
-	wslrCopperOuterR = 310*mm; //TODO chcek dim
+	wslrCopperOuterR = 700*mm; //TODO chcek dim
 	wslrCopperInnerR = wslrCopperOuterR-0.03*mm;   //TODO check dim
 
 	wslrTetraTexOuterR = wslrCopperInnerR;
 	wslrTetraTexInnerR = wslrTetraTexOuterR- 0.01*mm; //TODO check dim
 
 	wslrTPBThickness = 0.001*mm;
-	wslrHeight = 3500*mm; //TODO check dim
+	wslrHeight = 3500*mm; //TODO check diim
+
+	//LAr optical
+	lArAbsVUV = 20*cm;
+	lArAbsVis = 1000*m;
+	lArWL = 128*nm;
+	tpbWL = 450*nm;
+	lambdaE = twopi*1.97326902e-16 * m * GeV;
 
 }
 
@@ -148,12 +156,30 @@ void L200DetectorConstruction::InitializeMaterials(){
   	name="LiquidArgon";
    	lAr_mat = new G4Material(name,density,ncomponents,state,temperature,pressure);
         lAr_mat-> AddElement(argon, natoms = 1);
+	//optical LAr
+
+	const G4int NUM = 2;
+
+
+	G4double photonEnergy[NUM] = {lambdaE/(lArWL),lambdaE/(tpbWL)};
+	G4cout << "Photonenergy";
+	G4cout << "Photon energy of " << lArWL/nm << " nm is: " <<photonEnergy[1]/eV << " eV" << G4endl;
+	G4double lArAbsorption[NUM] = {lArAbsVUV,lArAbsVis};
+	G4double lArRefIndex[NUM]={LArRefIndex(lArWL),LArRefIndex(tpbWL)};
+	G4double lArRayLength[NUM]={LArRayLength(lArWL,temperature),LArRayLength(tpbWL,temperature)};
+
+	G4MaterialPropertiesTable* mptLAr = new G4MaterialPropertiesTable();
+	mptLAr->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+	mptLAr->AddProperty("RAYLEIGH",photonEnergy,lArRayLength,NUM);
+	mptLAr->AddProperty("ABSLENGTH",photonEnergy,lArAbsorption,NUM);
+
+	lAr_mat->SetMaterialPropertiesTable(mptLAr);
 
  	//Copper
 	copper_mat = nist->FindOrBuildMaterial("G4_Cu");
 
 	//Steel
-	steel_mat =nist->FindOrBuildMaterial("G4_Stainless-Steel");
+	steel_mat =nist->FindOrBuildMaterial("G4_STAINLESS-STEEL");
 
 	//TetraTex = PTFE
 	tetraTex_mat = new G4Material(name="tetraTex",
@@ -168,9 +194,24 @@ void L200DetectorConstruction::InitializeMaterials(){
 				 ncomponents=2);
 	TPB_mat->AddElement(elC,22);
 	TPB_mat->AddElement(elH,28);
+	//optical TPB
+	G4double tpbQuantumEff = 1.2;
+	G4double tpbTimeConst = 0.01*ns;
+	G4double tpbRefIndex[NUM] = {1.635,1.635};
+	G4double tpbEmission[NUM] = {lambdaE/tpbWL,lambdaE/tpbWL};
+	G4double tpbAbsorption[NUM] = {1*nm, 1000*m};
+
+	G4MaterialPropertiesTable* tbpMPT = new G4MaterialPropertiesTable();
+	tbpMPT->AddProperty("RINDEX",photonEnergy,tpbRefIndex,NUM);
+	tbpMPT->AddProperty("WLSABSLENGTH",photonEnergy, tpbAbsorption,NUM);
+	tbpMPT->AddProperty("WLSCOMPONENT",photonEnergy, tpbEmission, NUM);
+	tbpMPT->AddConstProperty("WLSTIMECONSTANT", tpbTimeConst);
+	tbpMPT->AddConstProperty("WLSMEANNUMBERPHOTONS", tpbQuantumEff);
+	TPB_mat->SetMaterialPropertiesTable(tbpMPT);
 
 	//World
-	world_mat = nist->FindOrBuildMaterial("G4_Air");
+	world_mat = nist->FindOrBuildMaterial("G4_AIR");
+
 }
 
 
@@ -217,6 +258,8 @@ G4VPhysicalVolume* L200DetectorConstruction::ConstructDetector(){
 	BuildWSLRCopper();
 	BuildWSLRTetra();
 	BuildWSLRTPB();
+	G4cout << "Build optics" << G4endl;
+	BuildOptics();
 
 	// Instantiation of a set of visualization attributes with cyan colour
     	G4VisAttributes * cryostatVisAtt = new G4VisAttributes(G4Colour(0.,1.,1.)); //cyan
@@ -255,9 +298,9 @@ void L200DetectorConstruction::ConstructCryostat()
     	G4double coord_rOuter[6] = {rneck,rneck,rcyl,rcyl,rlittlecyl,rlittlecyl};
     	//double coord_rOuter[6] = {rlittlecyl,rlittlecyl,rcyl,rcyl,rneck,rneck};
 
-	for(int i=0; i<sizeof(coord_rInner)/sizeof(*coord_rInner); i++){
+	/*for(int i=0; i<sizeof(coord_rInner)/sizeof(*coord_rInner); i++){
 		coord_rInner[i] = coord_rOuter[i]-wallthickness;
-	}
+	}*/
 
     	coord_z[0] = 0;
     	coord_z[1] = - hneck;
@@ -351,6 +394,9 @@ void L200DetectorConstruction::FillLAr(){
 					  lArLog,"larVolume",
 					  this->cryostatPhys->GetLogicalVolume(),0,0);
 
+	//optical stuff
+
+
 
 }
 //The inner fibershroud
@@ -425,7 +471,6 @@ void L200DetectorConstruction::BuildWSLRTetra(){
 						wslrtLog,
 						"wslrTetra",
 						this->lArPhys->GetLogicalVolume(),0,0);
-
 }
 
 //The WSLR TPB
@@ -453,8 +498,144 @@ void L200DetectorConstruction::UpdateGeometry()
 }
 
 
+void L200DetectorConstruction::BuildOptics()
+{
+	//TPB <-> LAr
+    	G4OpticalSurface* osIn = new G4OpticalSurface("LArToTPB",unified,ground,dielectric_dielectric,.5);
+	const G4int NUM = 2;
+	G4double photonEnergy[NUM] = {lambdaE/(tpbWL), lambdaE/(lArWL)};
+	G4double tpbRefIndex[NUM] = {1.635,1.635};
+	G4MaterialPropertiesTable *mptInTPB = new G4MaterialPropertiesTable();
+	mptInTPB->AddProperty("RINDEX",photonEnergy,tpbRefIndex,NUM);
+	osIn->SetMaterialPropertiesTable(mptInTPB);
+
+	new G4LogicalBorderSurface("LAr_TO_WLSRTPB",lArPhys,wslrTPBPhys,osIn);
+	new G4LogicalBorderSurface("WLSRTPB_TO_LAr",wslrTPBPhys,lArPhys,osIn);
+
+	//Tetratex
+	G4OpticalSurface* sf = new G4OpticalSurface("TetraTex_Surface",unified,groundfrontpainted, dielectric_dielectric);
+	G4double tetraReflectivity[NUM] = {0.95,0.95};
+	G4MaterialPropertiesTable *mptIntetra = new G4MaterialPropertiesTable();
+	mptIntetra->AddProperty("REFLECTIVITY",photonEnergy,tetraReflectivity,NUM);
+	sf->SetMaterialPropertiesTable(mptIntetra);
+	new G4LogicalSkinSurface("TetraTex_Surface",wslrTetraTexPhys->GetLogicalVolume(),sf);
+
+
+	//optical stuff for cu
+	G4OpticalSurface* sfcu = new G4OpticalSurface("Cu_surface",unified,ground,dielectric_metal,0.5);
+	G4double cuReflectivity[NUM] = {0.4448,0.15};
+	G4double cuEfficiency[NUM] = {1.,1.};
+	G4MaterialPropertiesTable *mptInCu = new G4MaterialPropertiesTable();
+	mptInCu->AddProperty("REFLECTIVITY",photonEnergy,cuReflectivity,NUM);
+	mptInCu->AddProperty("EFFICIENCY",photonEnergy,cuEfficiency,NUM);
+	sfcu->SetMaterialPropertiesTable(mptInCu);
+	new G4LogicalSkinSurface("Cu_Surface",wslrCopperPhys->GetLogicalVolume(),sfcu);
+
+	//optical stuff inner shroud
+	//If the photon goes into the fiber, absorpe it
+	G4OpticalSurface* sfIn = new G4OpticalSurface("LAr_TO_InnerFiber",unified,ground,dielectric_metal);
+	G4double fiberReflectivity[NUM] = {0.,0.};
+	G4double fiberEfficiency[NUM] = {1.,1.};
+	G4MaterialPropertiesTable *mptIn = new G4MaterialPropertiesTable();
+	mptIn->AddProperty("REFLECTIVITY",photonEnergy,fiberReflectivity,NUM);
+	mptIn->AddProperty("EFFICIENCY",photonEnergy,fiberEfficiency,NUM);
+	sfIn->SetMaterialPropertiesTable(mptIn);
+	new G4LogicalBorderSurface("LAr_TO_InnerFiber",lArPhys,fiberShroudInnerPhys,sfIn);
+
+	G4OpticalSurface* sfOut = new G4OpticalSurface("InnerFiber_TO_LAr",unified,ground,dielectric_metal);
+	G4double fiberReflectivity2[NUM] = {0.,0.};
+	G4double fiberEfficiency2[NUM] = {1.,1.};
+	G4MaterialPropertiesTable *mptOut = new G4MaterialPropertiesTable();
+	mptOut->AddProperty("REFLECTIVITY",photonEnergy,fiberReflectivity2,NUM);
+	mptOut->AddProperty("EFFICIENCY",photonEnergy,fiberEfficiency2,NUM);
+	sfIn->SetMaterialPropertiesTable(mptOut);
+	new G4LogicalBorderSurface("InnerFiber_TO_LAr",fiberShroudInnerPhys,lArPhys,sfOut);
+
+	//optical stuff outer shroud
+
+	//If the photon goes into the fiber, absorpe it
+	G4OpticalSurface* sfInOuter = new G4OpticalSurface("LAr_TO_OuterFiber",unified,ground,dielectric_metal);
+	G4double outerfiberReflectivity[NUM] = {0.,0.};
+	G4double outerfiberEfficiency[NUM] = {1.,1.};
+	G4MaterialPropertiesTable *mptInOuter = new G4MaterialPropertiesTable();
+	mptInOuter->AddProperty("REFLECTIVITY",photonEnergy,outerfiberReflectivity,NUM);
+	mptInOuter->AddProperty("EFFICIENCY",photonEnergy,outerfiberEfficiency,NUM);
+	sfInOuter->SetMaterialPropertiesTable(mptInOuter);
+	new G4LogicalBorderSurface("LAr_TO_OuterFiber",lArPhys,fiberShroudOuterPhys,sfInOuter);
+
+	G4OpticalSurface* sfOutOuter = new G4OpticalSurface("OuterFiber_TO_LAr",unified,ground,dielectric_metal);
+	G4double outerfiberReflectivity2[NUM] = {0.,0.};
+	G4double outerfiberEfficiency2[NUM] = {1.,1.};
+	G4MaterialPropertiesTable *mptOutOuter = new G4MaterialPropertiesTable();
+	mptOutOuter->AddProperty("REFLECTIVITY",photonEnergy,outerfiberReflectivity2,NUM);
+	mptOutOuter->AddProperty("EFFICIENCY",photonEnergy,outerfiberEfficiency2,NUM);
+	sfOutOuter->SetMaterialPropertiesTable(mptOutOuter);
+	new G4LogicalBorderSurface("OuterFiber_TO_LAr",fiberShroudOuterPhys,lArPhys,sfOutOuter);
+
+	//Give LAr volume a refractive skin
+	G4double lArRefIndex[NUM]={LArRefIndex(tpbWL),LArRefIndex(lArWL)};
+	G4MaterialPropertiesTable *mptLAr = new G4MaterialPropertiesTable();
+	mptLAr->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+
+	G4OpticalSurface* sfLAr = new G4OpticalSurface("LAr_Surface",unified,groundfrontpainted, dielectric_dielectric);
+	sfLAr->SetMaterialPropertiesTable(mptLAr);
+	new G4LogicalSkinSurface("LAr_Surface",lArPhys->GetLogicalVolume(),sfLAr);
 
 
 
+}
 
+G4double L200DetectorConstruction::LArRefIndex(G4double lambda)
+{
+	G4cout << "LAr refindex for ";
+	G4cout << lambda;
+	G4cout << " is: ";
+	G4double ret = sqrt(LArEpsilon(lambda));
+  	G4cout << ret << G4endl;
+	return ret; // square root of dielectric constant
+}
 
+// Calculates the dielectric constant of LAr from the Bideau-Sellmeier formula.
+// See : A. Bideau-Mehu et al., "Measurement of refractive indices of Ne, Ar,
+// Kr and Xe ...", J. Quant. Spectrosc. Radiat. Transfer, Vol. 25 (1981), 395
+
+G4double L200DetectorConstruction::LArEpsilon(G4double lambda)
+{
+  G4double epsilon;
+  if (lambda < 110*nanometer) return 1.0e4; // lambda MUST be > 110.0 nm
+  epsilon = lambda / micrometer; // switch to micrometers
+  epsilon = 1.0 / (epsilon * epsilon); // 1 / (lambda)^2
+  epsilon = 1.2055e-2 * ( 0.2075 / (91.012 - epsilon) +
+                          0.0415 / (87.892 - epsilon) +
+                          4.3330 / (214.02 - epsilon) );
+  epsilon *= (8./12.); // Bideau-Sellmeier -> Clausius-Mossotti
+  G4double LArRho = 1.396*g/cm3;
+  G4double GArRho = 1.66e-03*g/cm3;
+  epsilon *= (LArRho / GArRho); // density correction (Ar gas -> LAr liquid)
+  if (epsilon < 0.0 || epsilon > 0.999999) return 4.0e6;
+  epsilon = (1.0 + 2.0 * epsilon) / (1.0 - epsilon); // solve Clausius-Mossotti
+  return epsilon;
+}
+
+//-------------------------------------------------------------------------><
+// Calculates the Rayleigh scattering length using equations given in
+// G. M. Seidel at al., "Rayleigh scattering in rare-gas liquids",
+// arXiv:hep-ex/0111054 v2 22 Apr 2002
+
+G4double L200DetectorConstruction::LArRayLength(G4double lambda, G4double temp)
+{
+  G4double dyne = 1.0e-5*newton;
+  static const G4double LArKT = 2.18e-10 * cm2/dyne; // LAr isothermal compressibility
+  static const G4double k = 1.380658e-23 * joule/kelvin; // the Boltzmann constant
+  G4double h;
+  h = LArEpsilon(lambda);
+  if (h < 1.00000001) h = 1.00000001; // just a precaution
+  h = (h - 1.0) * (h + 2.0); // the "dielectric constant" dependance
+  h *= h; // take the square
+  h *= LArKT * temp * k; // compressibility * temp * Boltzmann constant
+  h /= lambda * lambda * lambda * lambda; // (lambda)^4
+  h *= 9.18704494231105429; // (2 * Pi / 3)^3
+  if ( h < (1.0 / (10.0 * km)) ) h = 1.0 / (10.0 * km); // just a precaution
+  if ( h > (1.0 / (0.1 * nanometer)) ) h = 1.0 / (0.1 * nanometer); // just a precaution
+  return ( 1.0 / h );
+}

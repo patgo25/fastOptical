@@ -28,6 +28,7 @@
 
 #include "G4OpticalPhysics.hh"
 #include "OpNoviceDetectorConstruction.hh"
+#include "L200DetectorConstruction.hh"
 #include "G4OpBoundaryProcess.hh"
 #include "MapRunAction.hh"
 
@@ -57,10 +58,10 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     bool fRecordAllSteps;
 
     vector< pair<string,string> > fPatternPairs;	//have to throw out regex due to ancient gcc 4.8.x not supporting it
- 
+
     G4int fNEvents;
     G4int fEventNumber;
-    vector<G4int> fPID; 
+    vector<G4int> fPID;
     vector<G4int> fTrackID;
     vector<G4int> fParentID;
     vector<G4int> fStepNumber;
@@ -85,7 +86,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
   public:
     G4SimpleSteppingAction(MapRunAction* mra) : fNEvents(0), fEventNumber(0), mra(mra) {
-      ResetVars(); 
+      ResetVars();
 
       fVolIDCmd = new G4UIcommand("/g4simple/setVolID", this);
       fVolIDCmd->SetParameter(new G4UIparameter("pattern", 's', false));
@@ -136,7 +137,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       return NULL;
     }
 
-    ~G4SimpleSteppingAction() { 
+    ~G4SimpleSteppingAction() {
       G4VAnalysisManager* man = GetAnalysisManager();
       if(man->IsOpenFile()) {
         if(fOption == kEventWise && fPID.size()>0) WriteRow(man);
@@ -148,7 +149,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       delete fOutputFormatCmd;
       delete fOutputOptionCmd;
       delete fRecordAllStepsCmd;
-    } 
+    }
 
     void SetNewValue(G4UIcommand *command, G4String newValues) {
       if(command == fVolIDCmd) {
@@ -239,20 +240,20 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       man->AddNtupleRow();
     }
 
-    void UserSteppingAction(const G4Step *step) { 
-	
+    void UserSteppingAction(const G4Step *step) {
+
 	int verbosity = 2;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
-	
+
 
 		/* ----------------- TEST */
 	if(step->GetPostStepPoint()->GetPhysicalVolume()==NULL){
 		if(verbosity>2){G4cout << "    Oh. @ End of World..." << G4endl;}
-		
+
 	}else{		//do this to prevent crash @ end of world
-		
+
 
 		G4String actualVolume = step->GetPostStepPoint()->GetPhysicalVolume()->GetName();
     //Suche den G4OpBoundaryProcess:
@@ -274,7 +275,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             /*Do Nothing... */
 			if(verbosity>3){G4cout << "Photon absorbed @ boundary of "<<actualVolume << G4endl;}
             break;
-        case Detection:{ 
+        case Detection:{
 			//old way of adding per hand; should no longer be needed by now
 			//G4SDManager* localSDman = G4SDManager::GetSDMpointer();
             //PMTConstruction::notifyPMTSD(step, localSDman);
@@ -312,7 +313,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             break;
 		case Undefined:
             if(verbosity>3)G4cout << "The step is undefined." << G4endl;
-            break;	
+            break;
 		case NotAtBoundary:
             if(verbosity>3)G4cout << "NotAtBoundary" << G4endl;
             break;
@@ -411,7 +412,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             int id_new = stoi(replaced);
             if (id_new == 0 || id_new == -1) {
               cout << "Volume " << name << ": Can't use ID = " << id_new << endl;
-            } 
+            }
             else {
               id = id_new;
             }
@@ -452,7 +453,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       }
 
       // If not in a sensitive volume, get out of here.
-      if(id == -1) return; 
+      if(id == -1) return;
 
       // Don't write Edep=0 steps (unless desired)
       if(!fRecordAllSteps && step->GetTotalEnergyDeposit() == 0) return;
@@ -490,14 +491,14 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 class G4SimplePrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
-    void GeneratePrimaries(G4Event* event) { fParticleGun.GeneratePrimaryVertex(event); } 
+    void GeneratePrimaries(G4Event* event) { fParticleGun.GeneratePrimaryVertex(event); }
   private:
     G4GeneralParticleSource fParticleGun;
 };
 
 
 class G4SimpleDetectorConstruction : public G4VUserDetectorConstruction
-{ 
+{
   public:
     G4SimpleDetectorConstruction(G4VPhysicalVolume *world = 0) { fWorld = world; }
     virtual G4VPhysicalVolume* Construct() { return fWorld; }
@@ -570,6 +571,9 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
   		opticalPhysics->SetMaxBetaChangePerStep(10.0);
   		opticalPhysics->SetTrackSecondariesFirst(kCerenkov,true);
   		opticalPhysics->SetTrackSecondariesFirst(kScintillation,true);
+		opticalPhysics->SetTrackSecondariesFirst(kAbsorption,true);
+		opticalPhysics->SetTrackSecondariesFirst(kWLS,true);
+
         SetUserInitialization(gvmpl);
         SetUserAction(new G4SimplePrimaryGeneratorAction); // must come after phys list
 		MapRunAction* mra = new MapRunAction(10);	//TODO: how many volumes?
@@ -583,7 +587,11 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
         iss >> filename >> validate;
 		if(filename == "OP_NOVICE"){
 			SetUserInitialization(new OpNoviceDetectorConstruction());
-		}else{
+		}
+		else if(filename == "L200"){
+			SetUserInitialization(new L200DetectorConstruction());
+		}
+		else{
 		    G4GDMLParser parser;
 		    parser.Read(filename, validate == "1" || validate == "true" || validate == "True");
 		    SetUserInitialization(new G4SimpleDetectorConstruction(parser.GetWorldVolume()));
@@ -609,8 +617,8 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
         devrandom.read((char*)(&seed), sizeof(long));
 
         // Negative seeds give nasty sequences for some engines. For example,
-        // CLHEP's JamesRandom.cc contains a specific check for this. Might 
-        // as well make all seeds positive; randomness is not affected (one 
+        // CLHEP's JamesRandom.cc contains a specific check for this. Might
+        // as well make all seeds positive; randomness is not affected (one
         // bit of randomness goes unused).
         if (seed < 0) seed = -seed;
 

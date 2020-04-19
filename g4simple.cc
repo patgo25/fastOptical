@@ -115,7 +115,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fOutputOptionCmd->SetGuidance("  eventwise: one row per event");
       fOption = kStepWise;
 
-      fSetFiberDetProbCmd = new G4UIcmdWithADouble("/g4simple/fiberDetProb", this);
+      fSetFiberDetProbCmd = new G4UIcmdWithADouble("/optics/fiberDetProb", this);
       fSetFiberDetProbCmd->SetDefaultValue(0.6);
       fSetFiberDetProbCmd->SetGuidance("Set the detection probability of the fiber shrouds (coverage)!");
       fiberDetProb = 0.;
@@ -254,7 +254,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
     void UserSteppingAction(const G4Step *step) {
 
-	int verbosity = 4;
+	int verbosity = 1;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();

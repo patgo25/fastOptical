@@ -1,4 +1,5 @@
 #include "L200DetectorConstruction.hh"
+#include "L200DetectorMessenger.hh"
 
 #include "G4RunManager.hh"
 #include "G4NistManager.hh"
@@ -34,15 +35,19 @@
 #include "G4Region.hh"
 #include "G4ios.hh"
 
+
 #include "G4Transform3D.hh"
 
 #include <cmath>
 using namespace CLHEP;
+
 // = = = = = = = = = = = KONSTRUKTOR & DESTRUKTOR = = = = = = = = = = = = = =
 
 L200DetectorConstruction::L200DetectorConstruction()
 	: G4VUserDetectorConstruction()
 {
+	det_briefTaube = new L200DetectorMessenger(this);
+
 	worldPhys 		= NULL;
 	cryostatPhys 		= NULL;
 	lArPhys			= NULL;
@@ -59,15 +64,15 @@ L200DetectorConstruction::L200DetectorConstruction()
 	tetraTex_mat		= NULL;
 	TPB_mat			= NULL;
 
-
-
 	InitializeDimensions();
 	InitializeRotations();
 }
 
 L200DetectorConstruction::~L200DetectorConstruction()
 {
+	delete det_briefTaube;
 }
+
 
 //= = = = = = = = = = = = = = = INITIALISIERUNGEN = = = = = = = = = = = = = =
 
@@ -100,14 +105,13 @@ void L200DetectorConstruction::InitializeDimensions(){
 	outerShroudHeight = 1500*mm;
 
 	//WSLR values
-	wslrCopperOuterR = 700*mm; //TODO chcek dim
-	wslrCopperInnerR = wslrCopperOuterR-0.03*mm;   //TODO check dim
+	wlsrRadius = 700*mm;
+	wlsrCuThickness = 0.03*mm;
 
-	wslrTetraTexOuterR = wslrCopperInnerR;
-	wslrTetraTexInnerR = wslrTetraTexOuterR- 0.01*mm; //TODO check dim
+	wlsrTetraTexThickness = 0.01*mm;
 
 	wslrTPBThickness = 0.001*mm;
-	wslrHeight = 3500*mm; //TODO check diim
+	wslrHeight = 3500*mm;
 
 	//LAr optical
 	lArAbsVUV = 20*cm;
@@ -116,10 +120,9 @@ void L200DetectorConstruction::InitializeDimensions(){
 	tpbWL = 450*nm;
 	lambdaE = twopi*1.97326902e-16 * m * GeV;
 
-}
+	}
 
 void L200DetectorConstruction::InitializeRotations(){
-
 }
 
 void L200DetectorConstruction::InitializeMaterials(){
@@ -438,6 +441,8 @@ void L200DetectorConstruction::BuildOuterShroud(){
 
 //The WSLR Copper
 void L200DetectorConstruction::BuildWSLRCopper(){
+	wslrCopperOuterR = wlsrRadius;
+	wslrCopperInnerR = wslrCopperOuterR-wlsrCuThickness;
 	G4Tubs* wslrcT = new G4Tubs("wslrCopper",
 				 wslrCopperInnerR,
 				 wslrCopperOuterR,
@@ -457,6 +462,8 @@ void L200DetectorConstruction::BuildWSLRCopper(){
 
 //The WSLR TetraTex
 void L200DetectorConstruction::BuildWSLRTetra(){
+	wslrTetraTexOuterR = wslrCopperInnerR;
+	wslrTetraTexInnerR = wslrTetraTexOuterR- wlsrTetraTexThickness;
 	G4Tubs* wslrtT = new G4Tubs("wslrTetraTex",
 				 wslrTetraTexInnerR,
 				 wslrTetraTexOuterR,
@@ -494,6 +501,7 @@ void L200DetectorConstruction::BuildWSLRTPB(){
 
 void L200DetectorConstruction::UpdateGeometry()
 {
+	G4cout << "Geometry updated" << G4endl;
 	G4RunManager::GetRunManager()->DefineWorldVolume(Construct());
 }
 

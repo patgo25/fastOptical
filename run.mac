@@ -37,6 +37,34 @@
 # volume IDs:
 #/g4simple/recordAllSteps
 
+#set geometry
+/geometry/innerShroud/innerRadius 122.5 mm
+/geometry/innerShroud/outerRadius 134.5 mm
+/geometry/innerShroud/height 1300 mm
+
+/geometry/outerShroud/innerRadius 283.0 mm
+/geometry/outerShroud/outerRadius 295.0 mm
+/geometry/outerShroud/height 1500 mm
+
+/geometry/wlsr/radius 700 mm
+/geometry/wlsr/height 3500 mm
+/geometry/wlsr/tpbThickness 0.001 mm
+/geometry/wlsr/cuThickness 0.03 mm
+/geometry/wlsr/tetraTexThickness 0.01 mm
+
+/geometry/cryostat/wallThickness 10 mm
+
+#set optics
+/optics/lArAbsLength 20 cm
+/optics/visAbsLength 1000 m
+/optics/lArScintWL 128 nm
+/optics/tpbScintWL 450 nm
+/optics/fiberDetProb 0.4
+
+#update geometry & optics
+/update
+
+
 
 /run/initialize
 
@@ -56,4 +84,4 @@
 /gps/direction 1 0 0
 /gps/pos/centre 69 0 0
 
-/run/beamOn 1000000
+/run/beamOn 100000

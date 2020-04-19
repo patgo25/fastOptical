@@ -533,7 +533,7 @@ void L200DetectorConstruction::BuildOptics()
 
 	//optical stuff inner shroud
 	//If the photon goes into the fiber, absorpe it
-	G4OpticalSurface* sfIn = new G4OpticalSurface("LAr_TO_InnerFiber",unified,ground,dielectric_metal);
+	G4OpticalSurface* sfIn = new G4OpticalSurface("LAr_TO_InnerFiber",unified,ground,dielectric_dielectric);
 	G4double fiberReflectivity[NUM] = {0.,0.};
 	G4double fiberEfficiency[NUM] = {1.,1.};
 	G4MaterialPropertiesTable *mptIn = new G4MaterialPropertiesTable();
@@ -542,7 +542,7 @@ void L200DetectorConstruction::BuildOptics()
 	sfIn->SetMaterialPropertiesTable(mptIn);
 	new G4LogicalBorderSurface("LAr_TO_InnerFiber",lArPhys,fiberShroudInnerPhys,sfIn);
 
-	G4OpticalSurface* sfOut = new G4OpticalSurface("InnerFiber_TO_LAr",unified,ground,dielectric_metal);
+	G4OpticalSurface* sfOut = new G4OpticalSurface("InnerFiber_TO_LAr",unified,ground,dielectric_dielectric);
 	G4double fiberReflectivity2[NUM] = {0.,0.};
 	G4double fiberEfficiency2[NUM] = {1.,1.};
 	G4MaterialPropertiesTable *mptOut = new G4MaterialPropertiesTable();
@@ -554,7 +554,7 @@ void L200DetectorConstruction::BuildOptics()
 	//optical stuff outer shroud
 
 	//If the photon goes into the fiber, absorpe it
-	G4OpticalSurface* sfInOuter = new G4OpticalSurface("LAr_TO_OuterFiber",unified,ground,dielectric_metal);
+	G4OpticalSurface* sfInOuter = new G4OpticalSurface("LAr_TO_OuterFiber",unified,ground,dielectric_dielectric);
 	G4double outerfiberReflectivity[NUM] = {0.,0.};
 	G4double outerfiberEfficiency[NUM] = {1.,1.};
 	G4MaterialPropertiesTable *mptInOuter = new G4MaterialPropertiesTable();
@@ -563,7 +563,7 @@ void L200DetectorConstruction::BuildOptics()
 	sfInOuter->SetMaterialPropertiesTable(mptInOuter);
 	new G4LogicalBorderSurface("LAr_TO_OuterFiber",lArPhys,fiberShroudOuterPhys,sfInOuter);
 
-	G4OpticalSurface* sfOutOuter = new G4OpticalSurface("OuterFiber_TO_LAr",unified,ground,dielectric_metal);
+	G4OpticalSurface* sfOutOuter = new G4OpticalSurface("OuterFiber_TO_LAr",unified,ground,dielectric_dielectric);
 	G4double outerfiberReflectivity2[NUM] = {0.,0.};
 	G4double outerfiberEfficiency2[NUM] = {1.,1.};
 	G4MaterialPropertiesTable *mptOutOuter = new G4MaterialPropertiesTable();

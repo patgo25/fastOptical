@@ -20,11 +20,13 @@
 #include "G4UIdirectory.hh"
 #include "G4UIcmdWithAString.hh"
 #include "G4UIcmdWithABool.hh"
+#include "G4UIcmdWithADouble.hh"
 #include "G4GDMLParser.hh"
 #include "G4TouchableHandle.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "G4tgbVolumeMgr.hh"
 #include "G4tgrMessenger.hh"
+#include "Randomize.hh"
 
 #include "G4OpticalPhysics.hh"
 #include "OpNoviceDetectorConstruction.hh"
@@ -50,7 +52,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithAString* fOutputFormatCmd;
     G4UIcmdWithAString* fOutputOptionCmd;
     G4UIcmdWithABool* fRecordAllStepsCmd;
-
+    G4UIcmdWithADouble* fSetFiberDetProbCmd;
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
     enum EOption { kStepWise, kEventWise };
@@ -79,6 +81,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     vector<G4double> fT;
     vector<G4int> fVolID;
     vector<G4int> fIRep;
+    G4double fiberDetProb;
 
     map<G4VPhysicalVolume*, int> fVolIDMap;
 
@@ -111,6 +114,11 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fOutputOptionCmd->SetGuidance("  stepwise: one row per step");
       fOutputOptionCmd->SetGuidance("  eventwise: one row per event");
       fOption = kStepWise;
+
+      fSetFiberDetProbCmd = new G4UIcmdWithADouble("/g4simple/fiberDetProb", this);
+      fSetFiberDetProbCmd->SetDefaultValue(0.6);
+      fSetFiberDetProbCmd->SetGuidance("Set the detection probability of the fiber shrouds (coverage)!");
+      fiberDetProb = 0.;
 
       fRecordAllStepsCmd = new G4UIcmdWithABool("/g4simple/recordAllSteps", this);
       fRecordAllStepsCmd->SetParameterName("recordAllSteps", true);
@@ -149,6 +157,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       delete fOutputFormatCmd;
       delete fOutputOptionCmd;
       delete fRecordAllStepsCmd;
+      delete fSetFiberDetProbCmd;
     }
 
     void SetNewValue(G4UIcommand *command, G4String newValues) {
@@ -186,6 +195,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       }
       if(command == fRecordAllStepsCmd) {
         fRecordAllSteps = fRecordAllStepsCmd->GetNewBoolValue(newValues);
+      }
+      if(command == fSetFiberDetProbCmd){
+	fiberDetProb = fSetFiberDetProbCmd->GetNewDoubleValue(newValues);
       }
     }
 
@@ -242,7 +254,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
     void UserSteppingAction(const G4Step *step) {
 
-	int verbosity = 2;
+	int verbosity = 4;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -256,6 +268,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
 
 		G4String actualVolume = step->GetPostStepPoint()->GetPhysicalVolume()->GetName();
+		G4String preVolume = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
+
     //Suche den G4OpBoundaryProcess:
     G4OpBoundaryProcess* boundary_proc=NULL;
     G4ProcessManager* proc_man = track->GetDefinition()->GetProcessManager();
@@ -318,7 +332,19 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             if(verbosity>3)G4cout << "NotAtBoundary" << G4endl;
             break;
 		case SameMaterial:
-            if(verbosity>3)G4cout << "SameMaterial" << G4endl;
+            if(verbosity>3){G4cout << "Flying from" << preVolume << " to " << actualVolume  << G4endl;}
+	    if(actualVolume == "innerShroud" || actualVolume == "outerShroud"){
+	    		if(preVolume == "larVolume"){
+				G4double u = G4UniformRand();
+				if(u <= fiberDetProb){
+					if(verbosity>3){G4cout << "Whuhu catched by " << actualVolume << " with a probabiltity of " << fiberDetProb << G4endl;}
+					mra->increment(0); //TODO: get ID of volume.
+					step->GetTrack()->SetTrackStatus(fStopAndKill);
+				}
+
+			}
+
+		}
             break;
         default:
 			if(verbosity>3)G4cout << "Unknown Photon-boundary-Action @ "<<actualVolume <<": "<<boundaryStatus<< G4endl;

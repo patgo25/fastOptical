@@ -252,9 +252,34 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       man->AddNtupleRow();
     }
 
-    void UserSteppingAction(const G4Step *step) {
-
-	int verbosity = 1;
+    void UserSteppingAction(const G4Step *step) { 
+		//NOW before everything else as we need volID in optical detection
+	  // post-step point will always work: only need to use the pre-step point
+      // on the first step, for which the pre-step volume is always the same as
+      // the post-step volume
+      G4VPhysicalVolume* vpv = step->GetPostStepPoint()->GetPhysicalVolume();
+      G4int id = fVolIDMap[vpv];
+      if(id == 0 && fPatternPairs.size() > 0) {
+        string name = (vpv == NULL) ? "NULL" : vpv->GetName();
+        for(auto& pp : fPatternPairs) {
+          if(name == pp.first) {
+            string replaced = pp.second;
+	    cout << "Setting ID for " << name << " to " << replaced << endl;
+            int id_new = stoi(replaced);
+            if (id_new == 0 || id_new == -1) {
+              cout << "Volume " << name << ": Can't use ID = " << id_new << endl;
+            } 
+            else {
+              id = id_new;
+            }
+            break;
+          }
+        }
+        if(id == 0 && !fRecordAllSteps) id = -1;
+        fVolIDMap[vpv] = id;
+      }
+	
+	int verbosity = 2;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -294,7 +319,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 			//G4SDManager* localSDman = G4SDManager::GetSDMpointer();
             //PMTConstruction::notifyPMTSD(step, localSDman);
 			if(verbosity>3){G4cout << "Photon detected @ boundary of "<<actualVolume << G4endl;}
-			mra->increment(0);	//TODO: get ID of volume!!!
+			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);	
 			}
 			break;
 		case FresnelReflection:
@@ -423,7 +448,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         ResetVars();
         lastEventID = fEventNumber;
       }
-
+/* moved forward
       // post-step point will always work: only need to use the pre-step point
       // on the first step, for which the pre-step volume is always the same as
       // the post-step volume
@@ -448,6 +473,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         if(id == 0 && !fRecordAllSteps) id = -1;
         fVolIDMap[vpv] = id;
       }
+*/
 
       // always record primary event info from pre-step of first step
       // if recording all steps, do this block to record prestep info
@@ -602,7 +628,7 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
 
         SetUserInitialization(gvmpl);
         SetUserAction(new G4SimplePrimaryGeneratorAction); // must come after phys list
-		MapRunAction* mra = new MapRunAction(10);	//TODO: how many volumes?
+		MapRunAction* mra = new MapRunAction(1);	//TODO: how many volumes?
 		SetUserAction(mra);
         SetUserAction(new G4SimpleSteppingAction(mra)); // must come after phys list
       }

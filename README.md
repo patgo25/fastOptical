@@ -12,6 +12,8 @@ My Idea for naming/simulating convention:
 
 
 
+And please use cmake. the makefile is unmaintained as of now
+
  based on g4simple, see here:
 
 # g4simple

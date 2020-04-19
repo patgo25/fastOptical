@@ -27,9 +27,11 @@ void MapRunAction::EndOfRunAction(const G4Run*){
 
 void MapRunAction::increment(G4int volID){
 	//can be removed for speedup when we are confident, that no shit is going on
-	if(volID < 0 || volID >= hitCount.size()){
+	if(volID <= 0){
 		G4cout << "ERROR: volID out of bounds: "<<volID<<G4endl;
 		throw 999;
 	}
-	hitCount[volID]++;
+	G4int index = volID-1;
+	if(index >= hitCount.size()) hitCount.resize(index+1, 0);	//fill up missing intermediates with 0
+	hitCount[index]++;
 }

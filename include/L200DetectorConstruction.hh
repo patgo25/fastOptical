@@ -126,6 +126,7 @@ protected:
 	G4double lArAbsVis;
 	G4double lArWL;
 	G4double tpbWL;
+	G4double deltaE;	//half width of emission / absorption peaks
 
 	//Messenger
 	L200DetectorMessenger* det_briefTaube;

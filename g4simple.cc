@@ -365,7 +365,6 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 				G4double u = G4UniformRand();
 				if(u <= fiberDetProb){
 					if(verbosity>3){G4cout << "Whuhu catched by " << actualVolume << " with a probabiltity of " << fiberDetProb << G4endl;}
-<<<<<<< HEAD
 					mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
 					step->GetTrack()->SetTrackStatus(fStopAndKill);
 				}

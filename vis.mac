@@ -1,0 +1,93 @@
+# use QGSP_BERT just to have something - this one loads fast.
+/run/verbose 1
+/event/verbose 1
+/tracking/verbose 1
+/g4simple/setReferencePhysList QGSP_BERT
+
+# as an example, use assembly.gdml from
+# geant4/examples/extended/persistency/gdml/G01
+#/control/getEnv G4INSTALL
+#/g4simple/setDetectorGDML {G4INSTALL}/../examples/extended/persistency/gdml/G01/assembly.gdml
+/g4simple/setDetectorGDML L200
+
+#set geometry
+/geometry/innerShroud/innerRadius 122.5 mm
+/geometry/innerShroud/outerRadius 134.5 mm
+/geometry/innerShroud/height 1300 mm
+
+/geometry/outerShroud/innerRadius 283.0 mm
+/geometry/outerShroud/outerRadius 295.0 mm
+/geometry/outerShroud/height 1500 mm
+
+/geometry/wlsr/radius 700 mm
+/geometry/wlsr/height 3500 mm
+/geometry/wlsr/tpbThickness 0.001 mm
+/geometry/wlsr/cuThickness 0.03 mm
+/geometry/wlsr/tetraTexThickness 0.01 mm
+
+/geometry/cryostat/wallThickness 10 mm
+
+#set optics
+/optics/lArAbsLength 20 cm
+/optics/visAbsLength 1000 m
+/optics/lArScintWL 128 nm
+/optics/tpbScintWL 450 nm
+/optics/fiberDetProb 0.4
+
+#update geometry & optics
+/update
+
+/run/initialize
+/update
+/vis/scene/create
+# Invoke the OpenGL visualization driver in its stored mode
+#/vis/viewer/list
+#/vis/open OGLSXm
+#/vis/open RayTracer
+/vis/open DAWNFILE
+
+/vis/verbose errors
+/vis/viewer/set/autoRefresh false
+# Set colors
+# /vis/geometry/set/colour volname depth red green blue opacity
+/vis/geometry/set/colour cryostat 0 0 0 0 0.1
+/vis/geometry/set/colour larVolume 0 1 1 1 0.3
+/vis/geometry/set/colour innerShroud 0 0.2 0.2 0.2 1
+/vis/geometry/set/colour outerShroud 0 1 0 0 1
+/vis/geometry/set/colour wslrCopper 0 1 0 0 1
+
+/vis/scene/add/trajectories
+/vis/scene/add/hits
+
+# Camera setting
+/vis/viewer/set/upVector 0 0 1
+/vis/viewer/set/style surface
+/vis/viewer/set/viewpointThetaPhi 70 30
+/vis/viewer/set/background white 0.
+/vis/viewer/set/lightsThetaPhi 30 30
+/vis/viewer/set/lightsVector 0 0 1
+/vis/viewer/zoom 4
+/vis/viewer/pan 0.5 0.3
+
+/gps/particle opticalphoton
+/gps/ene/mono 9.68626 eV
+/gps/direction 1 0 0
+/gps/pos/centre 0 0 0
+/run/beamOn 1
+# Camera setting
+#/vis/drawVolume cryostat
+#/vis/drawVolume
+#/vis/viewer/flush
+
+#/vis/verbose warnings
+#/vis/viewer/set/autoRefresh true
+#/vis/viewer/flush
+
+# set print mode to vectored
+#/vis/ogl/set/printMode vectored
+#/vis/ogl/set/printSize 2000 2000
+#/vis/ogl/printEPS
+
+# To draw the GDML file in ROOT:
+#TGeoManager::Import("file.gdml");
+#gGeoManager->GetTopVolume()->Draw("ogl");

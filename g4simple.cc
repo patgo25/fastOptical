@@ -34,6 +34,8 @@
 #include "G4OpBoundaryProcess.hh"
 #include "MapRunAction.hh"
 
+#include "L200ParticleGenerator.hh"
+
 #include "g4root.hh"
 #include "g4xml.hh"
 #include "g4csv.hh"
@@ -252,7 +254,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       man->AddNtupleRow();
     }
 
-    void UserSteppingAction(const G4Step *step) { 
+    void UserSteppingAction(const G4Step *step) {
 		//NOW before everything else as we need volID in optical detection
 	  // post-step point will always work: only need to use the pre-step point
       // on the first step, for which the pre-step volume is always the same as
@@ -268,7 +270,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             int id_new = stoi(replaced);
             if (id_new == 0 || id_new == -1) {
               cout << "Volume " << name << ": Can't use ID = " << id_new << endl;
-            } 
+            }
             else {
               id = id_new;
             }
@@ -278,8 +280,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         if(id == 0 && !fRecordAllSteps) id = -1;
         fVolIDMap[vpv] = id;
       }
-	
-	int verbosity = 2;
+
+	int verbosity = 4;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -319,7 +321,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 			//G4SDManager* localSDman = G4SDManager::GetSDMpointer();
             //PMTConstruction::notifyPMTSD(step, localSDman);
 			if(verbosity>3){G4cout << "Photon detected @ boundary of "<<actualVolume << G4endl;}
-			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);	
+			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
 			}
 			break;
 		case FresnelReflection:
@@ -363,7 +365,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 				G4double u = G4UniformRand();
 				if(u <= fiberDetProb){
 					if(verbosity>3){G4cout << "Whuhu catched by " << actualVolume << " with a probabiltity of " << fiberDetProb << G4endl;}
-					mra->increment(0); //TODO: get ID of volume.
+					mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+
 					step->GetTrack()->SetTrackStatus(fStopAndKill);
 				}
 
@@ -543,9 +546,12 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 class G4SimplePrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
-    void GeneratePrimaries(G4Event* event) { fParticleGun.GeneratePrimaryVertex(event); }
+    G4SimplePrimaryGeneratorAction(){gen = new L200ParticleGenerator;}
+    ~G4SimplePrimaryGeneratorAction(){delete gen;}
+    void GeneratePrimaries(G4Event* event) { gen->GeneratePrimaryVertex(event); }
   private:
-    G4GeneralParticleSource fParticleGun;
+    //G4GeneralParticleSource fParticleGun;
+    L200ParticleGenerator* gen;
 };
 
 

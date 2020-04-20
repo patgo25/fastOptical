@@ -279,7 +279,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         fVolIDMap[vpv] = id;
       }
 	
-	int verbosity = 2;
+	int verbosity = 4;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -357,13 +357,13 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             if(verbosity>3)G4cout << "NotAtBoundary" << G4endl;
             break;
 		case SameMaterial:
-            if(verbosity>3){G4cout << "Flying from" << preVolume << " to " << actualVolume  << G4endl;}
+            if(verbosity>3){G4cout << "Flying from " << preVolume << " to " << actualVolume  << G4endl;}
 	    if(actualVolume == "innerShroud" || actualVolume == "outerShroud"){
 	    		if(preVolume == "larVolume"){
 				G4double u = G4UniformRand();
 				if(u <= fiberDetProb){
 					if(verbosity>3){G4cout << "Whuhu catched by " << actualVolume << " with a probabiltity of " << fiberDetProb << G4endl;}
-					mra->increment(0); //TODO: get ID of volume.
+					mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]); //TODO: test if this works out. volID=0 leads to crash ;)
 					step->GetTrack()->SetTrackStatus(fStopAndKill);
 				}
 

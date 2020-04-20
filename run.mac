@@ -1,6 +1,6 @@
 /run/verbose 1
 /event/verbose  0
-/tracking/verbose 0
+/tracking/verbose 2
 
 /g4simple/setRandomSeed true
 #/random/setSeed 12345678
@@ -29,8 +29,12 @@
 # via the setVolID command
 # Example setting a full volume name (exact match):
 /g4simple/setVolID innerShroud 1
-/g4simple/setVolID outerShroud 1
-# Unfortunately, you have to provide all exact matches, since ancient RHEL7's gcc 4.8.x not fully supporting C++11
+/g4simple/setVolID outerShroud 2
+/g4simple/setVolID wslrCopper 3  #TODO keep typo?
+/g4simple/setVolID larVolume 4
+# Example using a regular expression to match multiple volumes, extract an
+# integer from the name, and set it as the volID
+#/g4simple/setVolID .*Detector([0-9]*).* $1
 # To get all steps in all volumes, comment out all setVolID commands (removes
 # all volume IDs from output), or uncomment the following line to keep the
 # volume IDs:
@@ -83,4 +87,4 @@
 /gps/direction 1 0 0
 /gps/pos/centre 69 0 0
 
-/run/beamOn 100000
+/run/beamOn 1000

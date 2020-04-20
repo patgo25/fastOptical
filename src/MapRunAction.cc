@@ -20,8 +20,8 @@ void MapRunAction::BeginOfRunAction(const G4Run*){
 }
 
 void MapRunAction::EndOfRunAction(const G4Run*){
-	for(size_t i = 0; i < hitCount.size(); i++){
-		G4cout << "Vol "<<i<<" --> "<<hitCount[i] << " counts."<<std::endl;
+	for(size_t i = 0; i < hitCount.size(); i++){//volID starts with one
+		G4cout << "Vol "<<i+1<<" --> "<<hitCount[i] << " counts."<<std::endl;
 	}
 }
 

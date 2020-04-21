@@ -60,7 +60,7 @@ public:
 	void setlArAbsVis(G4double value){lArAbsVis = value;}
 	void setlArWL(G4double value){lArWL = value;}
 	void settpbWL(G4double value){tpbWL = value;}
-
+	void setlArRay(G4bool value){lArRay = value;}
 
 protected:
 	G4VPhysicalVolume* worldPhys;
@@ -127,7 +127,7 @@ protected:
 	G4double lArWL;
 	G4double tpbWL;
 	G4double deltaE;	//half width of emission / absorption peaks
-
+	G4bool lArRay;
 	//Messenger
 	L200DetectorMessenger* det_briefTaube;
 

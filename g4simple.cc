@@ -282,7 +282,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         fVolIDMap[vpv] = id;
       }
 
-        int verbosity = 4;
+        int verbosity = 2;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -578,7 +578,7 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
 	RunList* runList;
 
   public:
-    G4SimpleRunManager() 
+    G4SimpleRunManager()
 	: runList(NULL)
 	{
       fDirectory = new G4UIdirectory("/g4simple/");
@@ -735,8 +735,8 @@ int main(int argc, char** argv)
 
 #ifdef GDMLOUT
 	//only for test. Will have to find better position to vomit out gdml only on request
-	G4GDMLParser parser;    
-    parser.Write("L200.gdml", 
+	G4GDMLParser parser;
+    parser.Write("L200.gdml",
         G4TransportationManager::GetTransportationManager()->
         GetNavigatorForTracking()->GetWorldVolume()->GetLogicalVolume());
 #endif //GDMLOUT

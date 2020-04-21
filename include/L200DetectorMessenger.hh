@@ -5,6 +5,7 @@
 #include "G4UIcommand.hh"
 #include "G4UIcmdWithADoubleAndUnit.hh"
 #include "G4UIcmdWithoutParameter.hh"
+#include "G4UIcmdWithABool.hh"
 #include "globals.hh"
 
 
@@ -42,6 +43,7 @@ private:
 	G4UIcmdWithADoubleAndUnit* visAbsLengthCmd;
 	G4UIcmdWithADoubleAndUnit* lArScintWLCmd;
 	G4UIcmdWithADoubleAndUnit* tpbScintWLCmd;
-	G4UIcmdWithoutParameter* updateCmd;
+	G4UIcmdWithABool*	   lArIsRayCmd;
+	G4UIcmdWithoutParameter*   updateCmd;
 };
 #endif

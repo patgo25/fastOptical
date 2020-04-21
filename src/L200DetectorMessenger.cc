@@ -4,6 +4,7 @@
 #include "G4UImessenger.hh"
 #include "G4UIcommand.hh"
 #include "G4UIcmdWithADoubleAndUnit.hh"
+#include "G4UIcmdWithABool.hh"
 #include "globals.hh"
 
 using namespace CLHEP;
@@ -87,6 +88,10 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 	tpbScintWLCmd->SetDefaultValue(20*cm);
 	tpbScintWLCmd->SetGuidance("Set TPB emission light WL");
 
+	lArIsRayCmd = new G4UIcmdWithABool("/optics/lArRayToggle", this);
+	lArIsRayCmd->SetDefaultValue(false);
+	lArIsRayCmd->SetGuidance("Set if Ray Scattering can occur in LAr");
+
 
 }
 
@@ -115,6 +120,7 @@ L200DetectorMessenger::~L200DetectorMessenger(){
 	delete lArScintWLCmd;
 	delete tpbScintWLCmd;
 	delete updateCmd;
+	delete lArIsRayCmd;
 }
 
 void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
@@ -183,6 +189,10 @@ void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
 	if(command == updateCmd){
 		det->UpdateGeometry();
 	}
+	if(command == lArIsRayCmd){
+		det->setlArRay(lArIsRayCmd->GetNewBoolValue(value));
+	}
+
 
 
 }

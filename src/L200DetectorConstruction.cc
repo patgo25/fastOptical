@@ -120,7 +120,7 @@ void L200DetectorConstruction::InitializeDimensions(){
 	tpbWL = 450*nm;
 	deltaE = 0.1*electronvolt;	//half width of emission / absorption peaks
 	lambdaE = twopi*1.97326902e-16 * m * GeV;		//hc/e
-
+	lArRay = false;
 	}
 
 void L200DetectorConstruction::InitializeRotations(){
@@ -175,7 +175,9 @@ void L200DetectorConstruction::InitializeMaterials(){
 
 	G4MaterialPropertiesTable* mptLAr = new G4MaterialPropertiesTable();
 	mptLAr->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
-	mptLAr->AddProperty("RAYLEIGH",photonEnergy,lArRayLength,NUM);
+	if(lArRay)
+		mptLAr->AddProperty("RAYLEIGH",photonEnergy,lArRayLength,NUM);
+
 	mptLAr->AddProperty("ABSLENGTH",photonEnergy,lArAbsorption,NUM);
 
 	lAr_mat->SetMaterialPropertiesTable(mptLAr);
@@ -194,7 +196,7 @@ void L200DetectorConstruction::InitializeMaterials(){
   	tetraTex_mat->AddElement(elC,fractionmass= 0.24);
 
 	//TPB
-	G4double photonEnergy_lines[NUM_lines] = {		
+	G4double photonEnergy_lines[NUM_lines] = {
 		//9.8*eV, 9.7*eV, 9.6*eV, 2.85*eV, 2.75*eV, 2.65*eV};
 		//2.65*eV, 2.75*eV, 2.85*eV, 8.6*eV, 9.7*eV, 10.8*eV};
 	//remember: energy goes from large to small (here)

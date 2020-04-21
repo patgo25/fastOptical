@@ -710,6 +710,14 @@ int main(int argc, char** argv)
   if(argc == 1) (new G4UIterminal(new G4UItcsh))->SessionStart();
   else G4UImanager::GetUIpointer()->ApplyCommand(G4String("/control/execute ")+argv[1]);
 
+#ifdef GDMLOUT
+	//only for test. Will have to find better position to vomit out gdml only on request
+	G4GDMLParser parser;    
+    parser.Write("L200.gdml", 
+        G4TransportationManager::GetTransportationManager()->
+        GetNavigatorForTracking()->GetWorldVolume()->GetLogicalVolume());
+#endif //GDMLOUT
+
   delete visManager;
   delete runManager;
   return 0;

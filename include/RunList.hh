@@ -31,6 +31,11 @@ public:
 private:
 	L200ParticleGenerator* generator;
 	MapRunAction* mra;
+	
+	G4UIdirectory* writeDir;
+  	G4UIcmdWithAString* writeFilename;
+
+	G4String filename;
 
 	void openFile();
 	void clearVars();

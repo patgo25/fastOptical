@@ -95,5 +95,7 @@
 /generator/SetCenterVector 0.0 0.0 0.0 mm
 /generator/Set1D true
 
+/write/filename herbert.root
+
 #/run/beamOn 10 NO SUCH STUFF HERE XXX
 

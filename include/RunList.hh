@@ -16,6 +16,7 @@ Commanded directly from main (after user inputs); is its own messenger.
 #include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithADouble.hh"
 
+class G4VAnalysisManager;
 
 class RunList : public G4UImessenger{
 public:
@@ -30,6 +31,17 @@ public:
 private:
 	L200ParticleGenerator* generator;
 	MapRunAction* mra;
+
+	void openFile();
+	void clearVars();
+	void writeRun();	//writes single run to file using the ana manager
+
+	G4int count;
+	G4double voxelX;		//voxel middle point
+	G4double voxelY;
+	G4double voxelZ;
+
+	G4VAnalysisManager* analysis;		//for writing out counts
 };
 
 #endif

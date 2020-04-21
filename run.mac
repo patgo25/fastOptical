@@ -29,7 +29,7 @@
 # via the setVolID command
 # Example setting a full volume name (exact match):
 /g4simple/setVolID innerShroud 1
-/g4simple/setVolID outerShroud 2
+/g4simple/setVolID outerShroud 1    #dont distinguish for now
 /g4simple/setVolID wslrCopper 3  #TODO keep typo?
 /g4simple/setVolID larVolume 4
 # Example using a regular expression to match multiple volumes, extract an

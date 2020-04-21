@@ -1,15 +1,25 @@
 
 #include "RunList.hh"
 #include "G4RunManager.hh"
+#include "g4root.hh"
 
 RunList::RunList(L200ParticleGenerator* generator, MapRunAction* mra)
 	: generator(generator), mra(mra)
 {
-
+ 	analysis = G4Root::G4AnalysisManager::Instance();
+    openFile();
 }
 
 
 RunList::~RunList(){
+	if(analysis != NULL){
+		if(analysis->IsOpenFile()){
+		    analysis->Write();
+		    analysis->CloseFile();
+		}
+    	delete analysis;
+	}
+
 	//TODO: delete commands here (if any)
 }
 
@@ -30,8 +40,67 @@ void RunList::startRuns(){
 		rm->BeamOn(nrPrimaries);
 		std::cout << " (0) run in voxel "<<generator->getCurrentVoxel()<<" ended: "<<std::endl;
 		print(mra);
+
+		writeRun();
 	}
 	std::cout << "Runs done "<<std::endl;
 }
+
+
+//only to be called ONCE
+void RunList::openFile(){
+    //ntuples are declared BEFORE the actual file is opened
+    //see G4Simple for the reason
+    //see lines 242 ff
+    analysis->CreateNtuple("map","geant4 map data");
+    analysis->CreateNtupleDColumn("xPos");//D for double
+    analysis->CreateNtupleDColumn("yPos");
+    analysis->CreateNtupleDColumn("zPos");
+    analysis->CreateNtupleIColumn("counts"); //I for int
+    //more if you want...
+
+    analysis->FinishNtuple();
+    analysis->SetFileName("test.root");
+    std::cout << "Opening file " << analysis->GetFileName() << std::endl;
+    analysis->OpenFile();
+    
+    clearVars();
+}
+
+void RunList::clearVars(){
+	//leave empty as we do not have vectors
+}
+
+void RunList::writeRun(){
+	L200ParticleGenerator::Voxel voxel = generator->getCurrentVoxel();
+	voxelX = voxel.xPos + 0.5*voxel.xWid;
+	voxelY = voxel.yPos + 0.5*voxel.yWid;
+	voxelZ = voxel.zPos + 0.5*voxel.zWid;
+	count = mra->getCount(1);	//should now have only cnts in volumes with ID 1 (check macro!!!)
+
+	analysis->FillNtupleDColumn(0, voxelX);
+	analysis->FillNtupleDColumn(1, voxelY);
+	analysis->FillNtupleDColumn(2, voxelZ);
+	analysis->FillNtupleIColumn(3, count);
+
+	analysis->AddNtupleRow();
+
+	clearVars();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

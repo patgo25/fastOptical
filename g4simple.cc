@@ -84,7 +84,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     vector<G4double> fT;
     vector<G4int> fVolID;
     vector<G4int> fIRep;
-    G4double fiberDetProb;
+
+
+    G4double fiberDetProb;		//fiber detection
 
     map<G4VPhysicalVolume*, int> fVolIDMap;
 
@@ -322,7 +324,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 			//G4SDManager* localSDman = G4SDManager::GetSDMpointer();
             //PMTConstruction::notifyPMTSD(step, localSDman);
 			if(verbosity>3){G4cout << "Photon detected @ boundary of "<<actualVolume << G4endl;}
-			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+			//mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
 			}
 			break;
 		case FresnelReflection:
@@ -379,6 +381,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             break;
         }
     }}
+
+		return;
 
 		/*  TEST --------------------- */
 
@@ -618,6 +622,8 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
       delete fTGDetectorCmd;
       delete fRandomSeedCmd;
       delete fListVolsCmd;
+
+		delete runList;	//have to do this to finalize written file
     }
 
     void SetNewValue(G4UIcommand *command, G4String newValues) {

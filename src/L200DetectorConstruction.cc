@@ -118,7 +118,8 @@ void L200DetectorConstruction::InitializeDimensions(){
 	lArAbsVis = 1000*m;
 	lArWL = 128*nm;
 	tpbWL = 450*nm;
-	lambdaE = twopi*1.97326902e-16 * m * GeV;
+	deltaE = 0.1*electronvolt;	//half width of emission / absorption peaks
+	lambdaE = twopi*1.97326902e-16 * m * GeV;		//hc/e
 
 	}
 
@@ -162,11 +163,12 @@ void L200DetectorConstruction::InitializeMaterials(){
 	//optical LAr
 
 	const G4int NUM = 2;
+	const G4int NUM_lines = 6;		//for emission/absorption --> no interpolation, but deltas
 
 
-	G4double photonEnergy[NUM] = {lambdaE/(lArWL),lambdaE/(tpbWL)};
+	G4double photonEnergy[NUM] = {lambdaE/(lArWL),lambdaE/(tpbWL)};		//defines energy from large to small
 	G4cout << "Photonenergy";
-	G4cout << "Photon energy of " << lArWL/nm << " nm is: " <<photonEnergy[1]/eV << " eV" << G4endl;
+	G4cout << "Photon energy of " << lArWL/nm << " nm is: " <<photonEnergy[0]/eV << " eV" << G4endl;
 	G4double lArAbsorption[NUM] = {lArAbsVUV,lArAbsVis};
 	G4double lArRefIndex[NUM]={LArRefIndex(lArWL),LArRefIndex(tpbWL)};
 	G4double lArRayLength[NUM]={LArRayLength(lArWL,temperature),LArRayLength(tpbWL,temperature)};
@@ -192,6 +194,12 @@ void L200DetectorConstruction::InitializeMaterials(){
   	tetraTex_mat->AddElement(elC,fractionmass= 0.24);
 
 	//TPB
+	G4double photonEnergy_lines[NUM_lines] = {		
+		//9.8*eV, 9.7*eV, 9.6*eV, 2.85*eV, 2.75*eV, 2.65*eV};
+		//2.65*eV, 2.75*eV, 2.85*eV, 8.6*eV, 9.7*eV, 10.8*eV};
+	//remember: energy goes from large to small (here)
+			lambdaE/(lArWL) + deltaE, lambdaE/(lArWL), lambdaE/(lArWL) - deltaE,
+			lambdaE/(tpbWL) + deltaE, lambdaE/(tpbWL), lambdaE/(tpbWL) - deltaE};
 	TPB_mat = new G4Material(name="TPB",
 				 density=1.08*g/cm3,
 				 ncomponents=2);
@@ -200,14 +208,14 @@ void L200DetectorConstruction::InitializeMaterials(){
 	//optical TPB
 	G4double tpbQuantumEff = 1.2;
 	G4double tpbTimeConst = 0.01*ns;
-	G4double tpbRefIndex[NUM] = {1.635,1.635};
-	G4double tpbEmission[NUM] = {lambdaE/tpbWL,lambdaE/tpbWL};
-	G4double tpbAbsorption[NUM] = {1*nm, 1000*m};
-
+	G4double tpbRefIndex[NUM_lines] = {1.635,1.635,1.635,1.635,1.635,1.635};
+	G4double tpbEmission[NUM_lines] = {0., 0., 0., 0., 1., 0.};//{lambdaE/tpbWL,lambdaE/tpbWL};
+	G4double tpbAbsorption[NUM_lines] = {1*nm, 1*nm, 1*nm, 1000*m, 1000*m, 1000*m};
+//{1000*m, 1000*m, 10*nm, 1*nm, 1*nm, 1*nm};
 	G4MaterialPropertiesTable* tbpMPT = new G4MaterialPropertiesTable();
-	tbpMPT->AddProperty("RINDEX",photonEnergy,tpbRefIndex,NUM);
-	tbpMPT->AddProperty("WLSABSLENGTH",photonEnergy, tpbAbsorption,NUM);
-	tbpMPT->AddProperty("WLSCOMPONENT",photonEnergy, tpbEmission, NUM);
+	tbpMPT->AddProperty("RINDEX",photonEnergy_lines,tpbRefIndex,NUM_lines);
+	tbpMPT->AddProperty("WLSABSLENGTH",photonEnergy_lines, tpbAbsorption,NUM_lines);
+	tbpMPT->AddProperty("WLSCOMPONENT",photonEnergy_lines, tpbEmission, NUM_lines);
 	tbpMPT->AddConstProperty("WLSTIMECONSTANT", tpbTimeConst);
 	tbpMPT->AddConstProperty("WLSMEANNUMBERPHOTONS", tpbQuantumEff);
 	TPB_mat->SetMaterialPropertiesTable(tbpMPT);

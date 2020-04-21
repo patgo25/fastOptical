@@ -61,6 +61,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     enum EOption { kStepWise, kEventWise };
     EOption fOption;
     bool fRecordAllSteps;
+	int verbosity;
 
     vector< pair<string,string> > fPatternPairs;	//have to throw out regex due to ancient gcc 4.8.x not supporting it
 
@@ -93,7 +94,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 	MapRunAction* mra;
 
   public:
-    G4SimpleSteppingAction(MapRunAction* mra) : fNEvents(0), fEventNumber(0), mra(mra) {
+    G4SimpleSteppingAction(MapRunAction* mra) : fNEvents(0), fEventNumber(0), mra(mra), verbosity(4) {
       ResetVars();
 
       fVolIDCmd = new G4UIcommand("/g4simple/setVolID", this);
@@ -284,7 +285,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         fVolIDMap[vpv] = id;
       }
 
-        int verbosity = 2;
+        //int verbosity = 2;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -382,7 +383,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         }
     }}
 
-		return;
+		return;		//TODO dirty trick to shut off normal writing to not interfere with custom
 
 		/*  TEST --------------------- */
 

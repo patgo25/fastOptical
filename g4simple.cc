@@ -35,6 +35,7 @@
 #include "MapRunAction.hh"
 
 #include "L200ParticleGenerator.hh"
+#include "RunList.hh"
 
 #include "g4root.hh"
 #include "g4xml.hh"
@@ -548,6 +549,7 @@ class G4SimplePrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
     G4SimplePrimaryGeneratorAction(){gen = new L200ParticleGenerator;}
     ~G4SimplePrimaryGeneratorAction(){delete gen;}
     void GeneratePrimaries(G4Event* event) { gen->GeneratePrimaryVertex(event); }
+	L200ParticleGenerator* getGenerator() {return gen;};
   private:
     //G4GeneralParticleSource fParticleGun;
     L200ParticleGenerator* gen;
@@ -573,9 +575,12 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
     G4UIcommand* fTGDetectorCmd;
     G4UIcmdWithABool* fRandomSeedCmd;
     G4UIcmdWithAString* fListVolsCmd;
+	RunList* runList;
 
   public:
-    G4SimpleRunManager() {
+    G4SimpleRunManager() 
+	: runList(NULL)
+	{
       fDirectory = new G4UIdirectory("/g4simple/");
       fDirectory->SetGuidance("Parameters for g4simple MC");
 
@@ -632,10 +637,13 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
 		opticalPhysics->SetTrackSecondariesFirst(kWLS,true);
 
         SetUserInitialization(gvmpl);
-        SetUserAction(new G4SimplePrimaryGeneratorAction); // must come after phys list
+		G4SimplePrimaryGeneratorAction* gspga = new G4SimplePrimaryGeneratorAction();
+        SetUserAction(gspga); // must come after phys list
 		MapRunAction* mra = new MapRunAction(1);	//TODO: how many volumes?
 		SetUserAction(mra);
         SetUserAction(new G4SimpleSteppingAction(mra)); // must come after phys list
+
+		runList = new RunList(gspga->getGenerator(), mra);//last but not least
       }
       else if(command == fDetectorCmd) {
         istringstream iss(newValues);
@@ -697,6 +705,14 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
         }
       }
     }
+
+	void autorun(){
+		if(runList == NULL){
+			G4Exception("G4SimpleRunManager::autorun","noRunList",RunMustBeAborted,"no runList here. Did you make some bad stuff in your macro?");
+		}else{
+			runList->startRuns();
+		}
+	};
 };
 
 
@@ -714,6 +730,8 @@ int main(int argc, char** argv)
 
   if(argc == 1) (new G4UIterminal(new G4UItcsh))->SessionStart();
   else G4UImanager::GetUIpointer()->ApplyCommand(G4String("/control/execute ")+argv[1]);
+
+	runManager->autorun();
 
 #ifdef GDMLOUT
 	//only for test. Will have to find better position to vomit out gdml only on request

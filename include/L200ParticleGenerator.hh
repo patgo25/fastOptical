@@ -20,6 +20,17 @@ class L200ParticleGenerator
 {
 
   public:
+
+	struct Voxel{
+		G4double xPos, yPos, zPos;	//all lower points; i.e. x from xPos to xWid, ...
+		G4double xWid, yWid, zWid;		//TODO currently unused; need to be implemented for oblong vxels
+
+		friend std::ostream& operator<<(std::ostream& os, const Voxel& vx){
+			os << "("<<vx.xPos<<","<<vx.yPos<<","<<vx.zPos<<")";
+			return os;
+		};
+	};
+
     L200ParticleGenerator();
     ~L200ParticleGenerator();
 
@@ -38,6 +49,12 @@ class L200ParticleGenerator
     void SetNParticles(G4double N) {fNParticles = N;}
     void is1DScan(G4bool b){fis1D =b;}
 
+	//methods called from above (RunList)
+	//to be called BEFORE STARTING ANY RUN!!!
+	int nextVoxel();		//commands the generator to switch to the next voxel (set internals accordingly)
+							//return is nr of primaries to be shot in there (beamOn called outside).
+							// return 0 --> end runs
+	Voxel getCurrentVoxel() {return currentVoxel;};
 
   private:
     static const G4double LambdaE;
@@ -57,6 +74,10 @@ class L200ParticleGenerator
     G4bool fis1D = true;
     G4double fLArWL;
     L200ParticleGeneratorMessenger* fMessenger;
+
+	Voxel currentVoxel;
+
+	uint32_t flatVoxelIndex;	//flat index for current voxel (defines both x and y index if needed)
 
 };
 #endif

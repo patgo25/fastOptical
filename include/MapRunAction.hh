@@ -1,5 +1,5 @@
 #ifndef MARRUNACTION_H
-#define MAPRUNACTION_H
+#define MARRUNACTION_H
 
 #include "globals.hh"
 #include "G4UserRunAction.hh"
@@ -20,6 +20,9 @@ class MapRunAction : public G4UserRunAction
 	void increment(G4int volID);	//increments one hit for a specific volume ID
 							//volID convention: >0; (0 not allowed, since that means no ID given). 
 							//also < 0 not allowed
+
+	G4int getCount(G4int volID){return hitCount.at(volID-1);};
+	G4int getVolumeNr() {return hitCount.size();};
 
   private:
     //G4Timer* fTimer;

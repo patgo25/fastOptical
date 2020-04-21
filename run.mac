@@ -1,6 +1,6 @@
 /run/verbose 1
-/event/verbose  1
-/tracking/verbose 1
+/event/verbose  0
+/tracking/verbose 0
 
 /g4simple/setRandomSeed true
 #/random/setSeed 12345678
@@ -91,9 +91,9 @@
 /generator/SetRadiusMin 0 mm
 /generator/SetHeight 0 mm
 /generator/SetBinWidth 10 mm
-/generator/SetNParticles 2
+/generator/SetNParticles 10
 /generator/SetCenterVector 0.0 0.0 0.0 mm
 /generator/Set1D true
 
-/run/beamOn 10
+#/run/beamOn 10 NO SUCH STUFF HERE XXX
 

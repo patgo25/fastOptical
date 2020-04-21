@@ -540,7 +540,7 @@ void L200DetectorConstruction::BuildOptics()
 	//optical stuff for cu
 	G4OpticalSurface* sfcu = new G4OpticalSurface("Cu_surface",unified,ground,dielectric_metal,0.5);
 	G4double cuReflectivity[NUM] = {0.4448,0.15};
-	G4double cuEfficiency[NUM] = {1.,1.};
+	G4double cuEfficiency[NUM] = {0.,0.};
 	G4MaterialPropertiesTable *mptInCu = new G4MaterialPropertiesTable();
 	mptInCu->AddProperty("REFLECTIVITY",photonEnergy,cuReflectivity,NUM);
 	mptInCu->AddProperty("EFFICIENCY",photonEnergy,cuEfficiency,NUM);

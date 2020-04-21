@@ -4,10 +4,16 @@
 #include "g4root.hh"
 
 RunList::RunList(L200ParticleGenerator* generator, MapRunAction* mra)
-	: generator(generator), mra(mra)
+	: generator(generator), mra(mra), filename("test.root")
 {
  	analysis = G4Root::G4AnalysisManager::Instance();
-    openFile();
+    //openFile();
+	
+	writeDir = new G4UIdirectory("/write/");
+  writeDir->SetGuidance("Output file properties");
+
+  writeFilename= new G4UIcmdWithAString("/write/filename",this);
+  writeFilename->SetGuidance("Set filename for root output file");
 }
 
 
@@ -24,7 +30,11 @@ RunList::~RunList(){
 }
 
 
-void RunList::SetNewValue(G4UIcommand *cmd, G4String newValue){}
+void RunList::SetNewValue(G4UIcommand *cmd, G4String newValue){
+	if(cmd == writeFilename){
+		filename = newValue;
+	}
+}
 
 void print(MapRunAction* mra){
 	for(int i = 0; i < mra->getVolumeNr(); i++){
@@ -34,6 +44,7 @@ void print(MapRunAction* mra){
 
 void RunList::startRuns(){
 	G4RunManager* rm = G4RunManager::GetRunManager();
+	openFile();
 	while(true){
 		int nrPrimaries = generator->nextVoxel();
 		if(nrPrimaries == 0) break;
@@ -60,7 +71,7 @@ void RunList::openFile(){
     //more if you want...
 
     analysis->FinishNtuple();
-    analysis->SetFileName("test.root");
+    analysis->SetFileName(filename);
     std::cout << "Opening file " << analysis->GetFileName() << std::endl;
     analysis->OpenFile();
     

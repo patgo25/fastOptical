@@ -118,7 +118,7 @@ void L200DetectorConstruction::InitializeDimensions(){
 	geDiscHeight = 100*mm;
 	geDiscRad = 50*mm;
 	geDiscGap = 50*mm;
-	geArrayRad = 300*mm;
+	geArrayRad = 200*mm;			//TODO finalize at some point
 	geDetectorsInString = 7;		//should be 7*10cm+6*5cm = 1m total
 	geStringCount = 14;				//defines the symmetry angle: 360/(14*2) ~ 12.8°
 
@@ -747,23 +747,24 @@ G4double L200DetectorConstruction::LArRayLength(G4double lambda, G4double temp)
   return ( 1.0 / h );
 }
 
+
+
 //metod with licence to kill the run
 void L200DetectorConstruction::sanityCheck(){
 	if(hneck+htopcylbot+hlittlecyl>=world_height || rcyl >= world_len || rcyl >= world_wid ){
-		G4Exception("L200DetectorConstruction::sanityCheck","cryoCrashesWorld",RunMustBeAborted,"volume dimension conflict between world & cryostat (i.e. cryostat is too fat)");
+		G4Exception("L200DetectorConstruction::sanityCheck","cryoCrashesWorld",FatalException,"volume dimension conflict between world & cryostat (i.e. cryostat is too fat)");
 	}
 	if(geDiscHeight*geDetectorsInString + geDiscGap*(geDetectorsInString-1) > htopcylbot ){
-		G4Exception("L200DetectorConstruction::sanityCheck","stringsTooLong",RunMustBeAborted,"ge detector strings exceed cryo height");
+		G4Exception("L200DetectorConstruction::sanityCheck","stringsTooLong",FatalException,"ge detector strings exceed cryo height");
 	}
 	if(geArrayRad - geDiscRad <= innerShroudOuterR){
-		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchInnerShroud",RunMustBeAborted,"ge detector strings touch inner fiber shroud");	
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchInnerShroud",FatalException,"ge detector strings touch inner fiber shroud");	
 	}
 	if(geArrayRad + geDiscRad >= outerShroudInnerR){
-		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",RunMustBeAborted,"ge detector strings touch outer fiber shroud");	
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",FatalException,"ge detector strings touch outer fiber shroud");	
 	}
 	//TODO further checks
 	
-
 
 	G4cout << "Sanity check finished successful." << G4endl;
 }

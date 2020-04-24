@@ -116,7 +116,7 @@ void L200DetectorConstruction::InitializeDimensions(){
 	wslrHeight = 3500*mm;
 
 	geDiscHeight = 100*mm;
-	geDiscRad = 50*mm;
+	geDiscRad = 40*mm;				//TODO finalize at some point
 	geDiscGap = 50*mm;
 	geArrayRad = 200*mm;			//TODO finalize at some point
 	geDetectorsInString = 7;		//should be 7*10cm+6*5cm = 1m total
@@ -763,8 +763,12 @@ void L200DetectorConstruction::sanityCheck(){
 	if(geArrayRad + geDiscRad >= outerShroudInnerR){
 		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",FatalException,"ge detector strings touch outer fiber shroud");	
 	}
+	if(geArrayRad*2*M_PI <= geDiscRad*2 * geStringCount ){
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringsTouchEachOther",FatalException,"ge detector strings too crowded & touch each other");	
+	}
 	//TODO further checks
 	
+	//std::cout <<geArrayRad*2*M_PI <<" "<< <<" -> "<<geDiscRad*2 * geDetectorsInString<<std::endl;
 
 	G4cout << "Sanity check finished successful." << G4endl;
 }

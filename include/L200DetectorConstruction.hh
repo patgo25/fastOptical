@@ -161,6 +161,9 @@ protected:
 	G4double LArRefIndex(G4double lambda);
 	G4double LArEpsilon(G4double lambda);
 	G4double LArRayLength(G4double lambda, G4double temp);
+
+	void sanityCheck();		//sanity check over geometrical parameters (e.g. ge array touches fibers)
+							//RunAbortion in case of error !!!
 };
 
 #endif

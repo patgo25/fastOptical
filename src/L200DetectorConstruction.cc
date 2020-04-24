@@ -320,6 +320,9 @@ G4VPhysicalVolume* L200DetectorConstruction::ConstructDetector(){
     	cryostatPhys->GetLogicalVolume()->SetVisAttributes(cryostatVisAtt);
     	worldPhys->GetLogicalVolume()->SetVisAttributes(worldVisAtt);
 
+	G4cout << "Doing a sanity check. Keep fingers crossed!"<<G4endl;
+	sanityCheck();
+
 	return worldPhys;
 }
 
@@ -743,3 +746,50 @@ G4double L200DetectorConstruction::LArRayLength(G4double lambda, G4double temp)
   if ( h > (1.0 / (0.1 * nanometer)) ) h = 1.0 / (0.1 * nanometer); // just a precaution
   return ( 1.0 / h );
 }
+
+//metod with licence to kill the run
+void L200DetectorConstruction::sanityCheck(){
+	if(hneck+htopcylbot+hlittlecyl>=world_height || rcyl >= world_len || rcyl >= world_wid ){
+		G4Exception("L200DetectorConstruction::sanityCheck","cryoCrashesWorld",RunMustBeAborted,"volume dimension conflict between world & cryostat (i.e. cryostat is too fat)");
+	}
+	if(geDiscHeight*geDetectorsInString + geDiscGap*(geDetectorsInString-1) > htopcylbot ){
+		G4Exception("L200DetectorConstruction::sanityCheck","stringsTooLong",RunMustBeAborted,"ge detector strings exceed cryo height");
+	}
+	if(geArrayRad - geDiscRad <= innerShroudOuterR){
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchInnerShroud",RunMustBeAborted,"ge detector strings touch inner fiber shroud");	
+	}
+	if(geArrayRad + geDiscRad >= outerShroudInnerR){
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",RunMustBeAborted,"ge detector strings touch outer fiber shroud");	
+	}
+	//TODO further checks
+	
+
+
+	G4cout << "Sanity check finished successful." << G4endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

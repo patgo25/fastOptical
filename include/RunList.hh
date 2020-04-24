@@ -39,9 +39,10 @@ private:
 
 	void openFile();
 	void clearVars();
-	void writeRun();	//writes single run to file using the ana manager
+	void writeRun(G4int nrPrimaries);	//writes single run to file using the ana manager
 
 	G4int count;
+	G4int initialNr;		//initial nr of photons
 	G4double voxelX;		//voxel middle point
 	G4double voxelY;
 	G4double voxelZ;

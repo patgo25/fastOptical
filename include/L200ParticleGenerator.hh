@@ -54,6 +54,7 @@ class L200ParticleGenerator
 	int nextVoxel();		//commands the generator to switch to the next voxel (set internals accordingly)
 							//return is nr of primaries to be shot in there (beamOn called outside).
 							// return 0 --> end runs
+
 	Voxel getCurrentVoxel() {return currentVoxel;};
 
   private:
@@ -63,10 +64,13 @@ class L200ParticleGenerator
     G4double  fCurrentEnergy; // energy of current particle
     G4ThreeVector fCurrentPosition; // current position of particle
     G4ThreeVector fDirection; // direction of momentum
-    G4double fRadiusMax = 0;
+    G4double fRadiusMax = 0;		//radius directly affects x from/to; y borders 
+								//dynamically calculated from xPos & scanAngle
     G4double fRadiusMin = 0;
     G4double fZ = 0;
     G4double fBinWidth = 0;
+	G4double scanAngle;		//defines y borders as from 0 to at least x*tan(scanAngle)
+		
     G4double fNParticles = 1;
     G4ThreeVector fCenterVector;
     G4String fParticleType = "opticalphoton";

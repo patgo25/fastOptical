@@ -59,6 +59,7 @@ L200DetectorConstruction::L200DetectorConstruction()
 
 	world_mat 		= NULL;
 	lAr_mat 		= NULL;
+	lAr_mat_fiber		= NULL;
 	steel_mat		= NULL;
 	copper_mat		= NULL;
 	tetraTex_mat		= NULL;
@@ -221,6 +222,27 @@ void L200DetectorConstruction::InitializeMaterials(){
 	tbpMPT->AddConstProperty("WLSTIMECONSTANT", tpbTimeConst);
 	tbpMPT->AddConstProperty("WLSMEANNUMBERPHOTONS", tpbQuantumEff);
 	TPB_mat->SetMaterialPropertiesTable(tbpMPT);
+
+	//Some nice LAr for the fibers
+  	density=1.390*g/cm3;
+  	ncomponents=1;
+  	natoms=1;
+  	state=kStateLiquid;
+  	temperature=87.0*kelvin;
+  	pressure=1.0*bar;
+  	name="LiquidArgonFiber";
+   	lAr_mat_fiber = new G4Material(name,density,ncomponents,state,temperature,pressure);
+        lAr_mat_fiber-> AddElement(argon, natoms = 1);
+	//optical LAr for fiber
+	G4MaterialPropertiesTable* mptLArFiber = new G4MaterialPropertiesTable();
+	mptLArFiber->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+	if(lArRay)
+		mptLAr->AddProperty("RAYLEIGH",photonEnergy,lArRayLength,NUM);
+
+	mptLArFiber->AddProperty("ABSLENGTH",photonEnergy,lArAbsorption,NUM);
+
+	lAr_mat_fiber->SetMaterialPropertiesTable(mptLAr);
+
 
 	//World
 	world_mat = nist->FindOrBuildMaterial("G4_AIR");
@@ -421,7 +443,7 @@ void L200DetectorConstruction::BuildInnerShroud(){
 				 0,
 				 2*M_PI);
 	G4LogicalVolume* isLog = new G4LogicalVolume(isT,
-						     this->lAr_mat,
+						     this->lAr_mat_fiber,
 						     "innerShroud");
 	this->fiberShroudInnerPhys = new G4PVPlacement(0,
 						G4ThreeVector(0.,0.,0.),
@@ -439,7 +461,7 @@ void L200DetectorConstruction::BuildOuterShroud(){
 				 0,
 				 2*M_PI);
 	G4LogicalVolume* osLog = new G4LogicalVolume(osT,
-						     this->lAr_mat,
+						     this->lAr_mat_fiber,
 						     "outerShroud");
 	this->fiberShroudOuterPhys = new G4PVPlacement(0,
 						     G4ThreeVector(0.,0.,0.),
@@ -552,46 +574,52 @@ void L200DetectorConstruction::BuildOptics()
 	//optical stuff inner shroud
 	//If the photon goes into the fiber, absorpe it
 	G4OpticalSurface* sfIn = new G4OpticalSurface("LAr_TO_InnerFiber",unified,ground,dielectric_dielectric);
-	G4double fiberReflectivity[NUM] = {0.,0.};
-	G4double fiberEfficiency[NUM] = {1.,1.};
+	//G4double fiberReflectivity[NUM] = {0.,0.};
+	G4double lArRefIndex[NUM]={LArRefIndex(tpbWL),LArRefIndex(lArWL)};
+
+	//G4double fiberEfficiency[NUM] = {0.,0.};
 	G4MaterialPropertiesTable *mptIn = new G4MaterialPropertiesTable();
-	mptIn->AddProperty("REFLECTIVITY",photonEnergy,fiberReflectivity,NUM);
-	mptIn->AddProperty("EFFICIENCY",photonEnergy,fiberEfficiency,NUM);
+	//mptIn->AddProperty("REFLECTIVITY",photonEnergy,fiberReflectivity,NUM);
+	mptIn->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+	//mptIn->AddProperty("EFFICIENCY",photonEnergy,fiberEfficiency,NUM);
 	sfIn->SetMaterialPropertiesTable(mptIn);
 	new G4LogicalBorderSurface("LAr_TO_InnerFiber",lArPhys,fiberShroudInnerPhys,sfIn);
 
 	G4OpticalSurface* sfOut = new G4OpticalSurface("InnerFiber_TO_LAr",unified,ground,dielectric_dielectric);
-	G4double fiberReflectivity2[NUM] = {0.,0.};
-	G4double fiberEfficiency2[NUM] = {1.,1.};
+	//G4double fiberReflectivity2[NUM] = {0.,0.};
+	//G4double fiberEfficiency2[NUM] = {0.,0.};
 	G4MaterialPropertiesTable *mptOut = new G4MaterialPropertiesTable();
-	mptOut->AddProperty("REFLECTIVITY",photonEnergy,fiberReflectivity2,NUM);
-	mptOut->AddProperty("EFFICIENCY",photonEnergy,fiberEfficiency2,NUM);
-	sfIn->SetMaterialPropertiesTable(mptOut);
+	//mptOut->AddProperty("REFLECTIVITY",photonEnergy,fiberReflectivity2,NUM);
+	mptOut->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+	//mptOut->AddProperty("EFFICIENCY",photonEnergy,fiberEfficiency2,NUM);
+	sfOut->SetMaterialPropertiesTable(mptOut);
 	new G4LogicalBorderSurface("InnerFiber_TO_LAr",fiberShroudInnerPhys,lArPhys,sfOut);
 
 	//optical stuff outer shroud
 
 	//If the photon goes into the fiber, absorpe it
 	G4OpticalSurface* sfInOuter = new G4OpticalSurface("LAr_TO_OuterFiber",unified,ground,dielectric_dielectric);
-	G4double outerfiberReflectivity[NUM] = {0.,0.};
-	G4double outerfiberEfficiency[NUM] = {1.,1.};
+	//G4double outerfiberReflectivity[NUM] = {0.,0.};
+	//G4double outerfiberEfficiency[NUM] = {0.,0.};
 	G4MaterialPropertiesTable *mptInOuter = new G4MaterialPropertiesTable();
-	mptInOuter->AddProperty("REFLECTIVITY",photonEnergy,outerfiberReflectivity,NUM);
-	mptInOuter->AddProperty("EFFICIENCY",photonEnergy,outerfiberEfficiency,NUM);
+	//mptInOuter->AddProperty("REFLECTIVITY",photonEnergy,outerfiberReflectivity,NUM);
+	mptInOuter->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+	//mptInOuter->AddProperty("EFFICIENCY",photonEnergy,outerfiberEfficiency,NUM);
 	sfInOuter->SetMaterialPropertiesTable(mptInOuter);
 	new G4LogicalBorderSurface("LAr_TO_OuterFiber",lArPhys,fiberShroudOuterPhys,sfInOuter);
 
 	G4OpticalSurface* sfOutOuter = new G4OpticalSurface("OuterFiber_TO_LAr",unified,ground,dielectric_dielectric);
-	G4double outerfiberReflectivity2[NUM] = {0.,0.};
-	G4double outerfiberEfficiency2[NUM] = {1.,1.};
+	//G4double outerfiberReflectivity2[NUM] = {0.,0.};
+	//G4double outerfiberEfficiency2[NUM] = {0.,0.};
 	G4MaterialPropertiesTable *mptOutOuter = new G4MaterialPropertiesTable();
-	mptOutOuter->AddProperty("REFLECTIVITY",photonEnergy,outerfiberReflectivity2,NUM);
-	mptOutOuter->AddProperty("EFFICIENCY",photonEnergy,outerfiberEfficiency2,NUM);
+	//mptOutOuter->AddProperty("REFLECTIVITY",photonEnergy,outerfiberReflectivity2,NUM);
+	mptOutOuter->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
+	//mptOutOuter->AddProperty("EFFICIENCY",photonEnergy,outerfiberEfficiency2,NUM);
 	sfOutOuter->SetMaterialPropertiesTable(mptOutOuter);
 	new G4LogicalBorderSurface("OuterFiber_TO_LAr",fiberShroudOuterPhys,lArPhys,sfOutOuter);
 
 	//Give LAr volume a refractive skin
-	G4double lArRefIndex[NUM]={LArRefIndex(tpbWL),LArRefIndex(lArWL)};
+	//G4double lArRefIndex[NUM]={LArRefIndex(tpbWL),LArRefIndex(lArWL)};
 	G4MaterialPropertiesTable *mptLAr = new G4MaterialPropertiesTable();
 	mptLAr->AddProperty("RINDEX",photonEnergy,lArRefIndex,NUM);
 

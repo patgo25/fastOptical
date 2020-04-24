@@ -31,10 +31,12 @@
 #include "G4OpticalPhysics.hh"
 #include "OpNoviceDetectorConstruction.hh"
 #include "L200DetectorConstruction.hh"
-#include "G4OpBoundaryProcess.hh"
+//#include "L200OpBoundaryProcess.hh"
 #include "MapRunAction.hh"
 
 #include "L200ParticleGenerator.hh"
+#include "L200FiberPhysics.hh"
+#include "L200OpBoundaryProcess.hh"
 #include "RunList.hh"
 
 #include "g4root.hh"
@@ -56,6 +58,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithAString* fOutputOptionCmd;
     G4UIcmdWithABool* fRecordAllStepsCmd;
     G4UIcmdWithADouble* fSetFiberDetProbCmd;
+    G4UIcmdWithADouble* fSetFiberAbsProbCmd;
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
     enum EOption { kStepWise, kEventWise };
@@ -87,7 +90,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
 
     G4double fiberDetProb;		//fiber detection
-
+    G4double fiberAbsProb;		//fiber absorption
     map<G4VPhysicalVolume*, int> fVolIDMap;
 
 	MapRunAction* mra;
@@ -124,6 +127,12 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fSetFiberDetProbCmd->SetDefaultValue(0.6);
       fSetFiberDetProbCmd->SetGuidance("Set the detection probability of the fiber shrouds (coverage)!");
       fiberDetProb = 0.;
+
+      fSetFiberAbsProbCmd = new G4UIcmdWithADouble("/optics/fiberAbsProb", this);
+      fSetFiberAbsProbCmd->SetDefaultValue(0.1);
+      fSetFiberAbsProbCmd->SetGuidance("Set the detection probability of the fiber shrouds (absorption)!");
+      fiberAbsProb = 0.;
+
 
       fRecordAllStepsCmd = new G4UIcmdWithABool("/g4simple/recordAllSteps", this);
       fRecordAllStepsCmd->SetParameterName("recordAllSteps", true);
@@ -163,6 +172,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       delete fOutputOptionCmd;
       delete fRecordAllStepsCmd;
       delete fSetFiberDetProbCmd;
+      delete fSetFiberAbsProbCmd;
     }
 
     void SetNewValue(G4UIcommand *command, G4String newValues) {
@@ -203,6 +213,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       }
       if(command == fSetFiberDetProbCmd){
 	fiberDetProb = fSetFiberDetProbCmd->GetNewDoubleValue(newValues);
+      }
+      if(command == fSetFiberAbsProbCmd){
+	fiberAbsProb = fSetFiberAbsProbCmd->GetNewDoubleValue(newValues);
       }
     }
 
@@ -284,7 +297,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         fVolIDMap[vpv] = id;
       }
 
-        int verbosity = 2;
+        int verbosity = 4;
 
 		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
@@ -300,20 +313,20 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 		G4String actualVolume = step->GetPostStepPoint()->GetPhysicalVolume()->GetName();
 		G4String preVolume = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
 
-    //Suche den G4OpBoundaryProcess:
-    G4OpBoundaryProcess* boundary_proc=NULL;
+    //Suche den L200OpBoundaryProcess:
+    L200OpBoundaryProcess* boundary_proc=NULL;
     G4ProcessManager* proc_man = track->GetDefinition()->GetProcessManager();
     int proc_num = proc_man->GetProcessListLength();
     G4ProcessVector* proc_vec = proc_man->GetProcessList();
     for(int i = 0; i < proc_num; i++){
         if((*proc_vec)[i]->GetProcessName()=="OpBoundary"){
-            boundary_proc = (G4OpBoundaryProcess*)(*proc_vec)[i];
+            boundary_proc = (L200OpBoundaryProcess*)(*proc_vec)[i];
             break;
         }
     }
     if(boundary_proc &&
     track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()){
-        G4OpBoundaryProcessStatus boundaryStatus=boundary_proc->GetStatus();
+        L200OpBoundaryProcessStatus boundaryStatus=boundary_proc->GetStatus();
         switch(boundaryStatus){
         case Absorption:
             /*Do Nothing... */
@@ -331,7 +344,11 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
             if(verbosity>3)G4cout << "FresnelReflection" << G4endl;
             break;
 		case FresnelRefraction:
-            if(verbosity>3)G4cout << "FresnelRefraction" << G4endl;
+            if(verbosity>3){
+		G4cout << "FresnelRefraction"<<G4endl;
+		//G4cout << step->GetPreStepPoint()->GetMomentumDirection() << " to ";
+		//G4cout << step->GetPostStepPoint()->GetMomentumDirection() << G4endl;
+	    }
             break;
         case TotalInternalReflection:
             if(verbosity>3)G4cout << "TotalInternalReflection" << G4endl;
@@ -368,8 +385,57 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 				G4double u = G4UniformRand();
 				if(u <= fiberDetProb){
 					if(verbosity>3){G4cout << "Whuhu catched by " << actualVolume << " with a probabiltity of " << fiberDetProb << G4endl;}
-					mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
-					step->GetTrack()->SetTrackStatus(fStopAndKill);
+					//Lets roll again and check if the photon is absorbed or reemitted blue
+					G4double p = G4UniformRand();
+					if(p <= fiberAbsProb){
+						if(verbosity>3){G4cout << "Yeees photon absorbed with a probabiltity of " << fiberAbsProb << G4endl;}
+						mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+						step->GetTrack()->SetTrackStatus(fStopAndKill);
+
+					}
+					else{
+						//G4double lambda = twopi*1.973269602e-16*m*GeV;
+						//G4ThreeVector currentDir = step->GetTrack()->GetMomentumDirection();
+						//G4double cr = sqrt(currentDir.getX()*currentDir.getX() +currentDir.getY()*currentDir.getY());
+						//G4double cphi =acos(currentDir.getX()/cr);
+						//Take current phi rotate by 180 deg and roate with +- 90 deg
+						//G4double phi = cphi + pi + pi*(G4UniformRand()-0.5);
+						//G4double pz = G4UniformRand();
+						//G4double px = cos(phi);
+						//G4double py = sin(phi);
+						//G4double r = lambda/(450*nm-128*nm);
+						//step->SetTotalEnergyDeposit(r)
+
+						//G4Track* tpbPhoton = step->GetTrack();
+						//Its possible so it is allowed
+						//G4SteppingManager* sm = G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
+						//G4VParticleChange* pc = sm->GetfParticleChange();
+						//G4Track* tpbPhoton = new G4Track();
+						//tpbPhoton->SetPosition(step->GetTrack()->GetPosition());
+						//tpbPhoton->SetMomentumDirection(G4ThreeVector(px,py,pz));
+						//tpbPhoton->SetKineticEnergy(lambda/(450*nm));
+						//tpbPhoton->SetParentID(step->GetTrack()->GetTrackID());
+						//tpbPhoton->SetTrackID(0);
+						//tpbPhoton->SetGlobalTime(step->GetTrack()->GetGlobalTime());
+
+						//pc->ProposeLocalEnergyDeposit(lambda/((450*nm-128*nm)));
+						//step->GetTrack()->SetTrackStatus(fStopAndKill);
+						//tpbPhoton->SetMomentumDirection(G4ThreeVector(px,py,pz));
+						//tpbPhoton->SetKineticEnergy(lambda/(450*nm));
+						//pc->AddSecondary(tpbPhoton);
+						//step->GetTrack()->SetTrackStatus(fStopAndKill);
+						//G4StackManager* stackm = G4EventManager::GetEventManager()->GetStackManager();
+						//stackm->PushOneTrack(tpbPhoton);
+						//step->GetTrack()->SetMomentumDirection(G4ThreeVector(px,py,pz));
+						//step->GetTack()->SetKineticEnergy(lambda/(450*nm));
+
+						//if(verbosity>3){
+						//	G4cout << "Well not this time lets reemit with 450 nm in pi and give it another go";
+						//	G4cout << " Shifting incoming of " << 180*cphi/pi << " deg to " << 180*phi/pi << "deg ";
+						//	G4cout << "and a WL of 450 nm" << G4endl;
+						//}
+
+			        	}
 				}
 
 			}
@@ -633,6 +699,7 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
 		G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
   		gvmpl->RegisterPhysics( opticalPhysics );		//it's public: it's allowed
   		opticalPhysics->SetWLSTimeProfile("delta");
+		opticalPhysics->Configure(kBoundary,false);
   		opticalPhysics->SetScintillationYieldFactor(1.0);
  		opticalPhysics->SetScintillationExcitationRatio(0.0);
   		opticalPhysics->SetMaxNumPhotonsPerStep(100);
@@ -641,6 +708,8 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
   		opticalPhysics->SetTrackSecondariesFirst(kScintillation,true);
 		opticalPhysics->SetTrackSecondariesFirst(kAbsorption,true);
 		opticalPhysics->SetTrackSecondariesFirst(kWLS,true);
+		L200FiberPhysics* fp = new L200FiberPhysics();
+		gvmpl->RegisterPhysics(fp);
 
         SetUserInitialization(gvmpl);
 		G4SimplePrimaryGeneratorAction* gspga = new G4SimplePrimaryGeneratorAction();

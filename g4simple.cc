@@ -21,6 +21,7 @@
 #include "G4UIcmdWithAString.hh"
 #include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithADouble.hh"
+#include "G4UIcmdWithAnInteger.hh"
 #include "G4GDMLParser.hh"
 #include "G4TouchableHandle.hh"
 #include "G4PhysicalVolumeStore.hh"
@@ -56,6 +57,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithAString* fOutputOptionCmd;
     G4UIcmdWithABool* fRecordAllStepsCmd;
     G4UIcmdWithADouble* fSetFiberDetProbCmd;
+	G4UIcmdWithAnInteger* fSetVerboseCmd;
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
     enum EOption { kStepWise, kEventWise };
@@ -131,6 +133,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fRecordAllStepsCmd->SetDefaultValue(true);
       fRecordAllStepsCmd->SetGuidance("Write out every single step, not just those in sensitive volumes.");
       fRecordAllSteps = false;
+
+	  fSetVerboseCmd = new G4UIcmdWithAnInteger("/g4simple/verbose", this);
+	  fSetFiberDetProbCmd->SetGuidance("Sets verbosity of stepping.");
     }
 
     G4VAnalysisManager* GetAnalysisManager() {
@@ -205,6 +210,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       if(command == fSetFiberDetProbCmd){
 	fiberDetProb = fSetFiberDetProbCmd->GetNewDoubleValue(newValues);
       }
+	  if(command == fSetVerboseCmd){
+		verbosity = fSetVerboseCmd->GetNewIntValue(newValues);
+	  }
     }
 
     void ResetVars() {

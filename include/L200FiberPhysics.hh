@@ -11,7 +11,16 @@ public:
 	virtual ~L200FiberPhysics();
 	virtual void ConstructParticle();
 	virtual void ConstructProcess();
+
+	//Magic setter
+	void setFiberHitProb(G4double value){theProb = value;}
+	void setMagicMaterialName(G4String value){theTPBMagicMaterialName = value;}
+	void setLArWL(G4double value){theLArWL = value;}
+
 private:
 	L200OpBoundaryProcess* fL200OpBoundaryProcess;
+	G4double theProb;
+	G4String theTPBMagicMaterialName;
+	G4double theLArWL;
 };
 #endif

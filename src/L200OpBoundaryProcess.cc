@@ -1,6 +1,7 @@
 #include "G4ios.hh"
 #include "G4PhysicalConstants.hh"
 #include "G4OpProcessSubType.hh"
+#include "G4SystemOfUnits.hh"
 
 #include "L200OpBoundaryProcess.hh"
 #include "G4GeometryTolerance.hh"
@@ -14,6 +15,7 @@
 // }
 
         // Constructors
+const G4double lambda= twopi*1.973269602e-16 * m * GeV;
 
 L200OpBoundaryProcess::L200OpBoundaryProcess(const G4String& processName,
                                                G4ProcessType type)
@@ -51,6 +53,12 @@ L200OpBoundaryProcess::L200OpBoundaryProcess(const G4String& processName,
         iTE = iTM = 0;
         thePhotonMomentum = 0.;
         Rindex1 = Rindex2 = cost1 = cost2 = sint1 = sint2 = 0.;
+
+	theProb = 0;
+	theTPBMagicMaterialName = "LiquidArgonFiber";
+	theLArWL= 128*nm;
+
+
 }
 
 // L200OpBoundaryProcess::L200OpBoundaryProcess(const L200OpBoundaryProcess &right)
@@ -72,12 +80,13 @@ L200OpBoundaryProcess::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep)
         theStatus = Undefined;
 
         aParticleChange.Initialize(aTrack);
-        aParticleChange.ProposeVelocity(aTrack.GetVelocity());
 
         G4StepPoint* pPreStepPoint  = aStep.GetPreStepPoint();
         G4StepPoint* pPostStepPoint = aStep.GetPostStepPoint();
 
-        if ( verboseLevel > 0 ) {
+        G4double fcov= G4UniformRand();
+
+	if ( verboseLevel > 0 ) {
            G4cout << " Photon at Boundary! " << G4endl;
            G4VPhysicalVolume* thePrePV = pPreStepPoint->GetPhysicalVolume();
            G4VPhysicalVolume* thePostPV = pPostStepPoint->GetPhysicalVolume();
@@ -105,321 +114,359 @@ L200OpBoundaryProcess::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep)
         OldMomentum       = aParticle->GetMomentumDirection();
         OldPolarization   = aParticle->GetPolarization();
 
-        if ( verboseLevel > 0 ) {
-           G4cout << " Old Momentum Direction: " << OldMomentum     << G4endl;
-           G4cout << " Old Polarization:       " << OldPolarization << G4endl;
-        }
+	if ( verboseLevel > 0 ) {
+		G4cout << " Old Momentum Direction: " << OldMomentum     << G4endl;
+		G4cout << " Old Polarization:       " << OldPolarization << G4endl;
+		G4cout << "prev Material: " << Material1->GetName() << G4endl;
+		G4cout << "Material: " << Material2->GetName() << G4endl;
+		G4cout << "Random Res: " << fcov <<"compared to Prob of " << theProb << G4endl;
+		G4cout << "WL: " << (lambda/aTrack.GetKineticEnergy())/nm << G4endl;
 
-        G4ThreeVector theGlobalPoint = pPostStepPoint->GetPosition();
+	}
 
-        G4Navigator* theNavigator =
-                     G4TransportationManager::GetTransportationManager()->
-                                              GetNavigatorForTracking();
+	G4ThreeVector theGlobalPoint = pPostStepPoint->GetPosition();
 
-        G4bool valid;
-        //  Use the new method for Exit Normal in global coordinates,
-        //    which provides the normal more reliably.
-        theGlobalNormal =
-                     theNavigator->GetGlobalExitNormal(theGlobalPoint,&valid);
+	G4Navigator* theNavigator =
+		     G4TransportationManager::GetTransportationManager()->
+					      GetNavigatorForTracking();
 
-        if (valid) {
-          theGlobalNormal = -theGlobalNormal;
-        }
-        else
-        {
-          G4ExceptionDescription ed;
-          ed << " L200OpBoundaryProcess/PostStepDoIt(): "
-                 << " The Navigator reports that it returned an invalid normal"
-                 << G4endl;
-          G4Exception("L200OpBoundaryProcess::PostStepDoIt", "OpBoun01",
-                      EventMustBeAborted,ed,
-                      "Invalid Surface Normal - Geometry must return valid surface normal");
-        }
+	G4bool valid;
+	//  Use the new method for Exit Normal in global coordinates,
+	//    which provides the normal more reliably.
+	theGlobalNormal =
+		     theNavigator->GetGlobalExitNormal(theGlobalPoint,&valid);
 
-        if (OldMomentum * theGlobalNormal > 0.0) {
-#ifdef G4OPTICAL_DEBUG
-           G4ExceptionDescription ed;
-           ed << " L200OpBoundaryProcess/PostStepDoIt(): "
-              << " theGlobalNormal points in a wrong direction. "
-              << G4endl;
-           ed << "    The momentum of the photon arriving at interface (oldMomentum)"
-              << " must exit the volume cross in the step. " << G4endl;
-           ed << "  So it MUST have dot < 0 with the normal that Exits the new volume (globalNormal)." << G4endl;
-           ed << "  >> The dot product of oldMomentum and global Normal is " << OldMomentum*theGlobalNormal << G4endl;
-           ed << "     Old Momentum  (during step)     = " << OldMomentum << G4endl;
-           ed << "     Global Normal (Exiting New Vol) = " << theGlobalNormal << G4endl;
-           ed << G4endl;
-           G4Exception("L200OpBoundaryProcess::PostStepDoIt", "OpBoun02",
-                       EventMustBeAborted,  // Or JustWarning to see if it happens repeatedbly on one ray
-                       ed,
-                      "Invalid Surface Normal - Geometry must return valid surface normal pointing in the right direction");
-#else
-           theGlobalNormal = -theGlobalNormal;
-#endif
-        }
+	if (valid) {
+	  theGlobalNormal = -theGlobalNormal;
+	}
+	else
+	{
+	  G4ExceptionDescription ed;
+	  ed << " L200OpBoundaryProcess/PostStepDoIt(): "
+		 << " The Navigator reports that it returned an invalid normal"
+		 << G4endl;
+	  G4Exception("L200OpBoundaryProcess::PostStepDoIt", "OpBoun01",
+		      EventMustBeAborted,ed,
+		      "Invalid Surface Normal - Geometry must return valid surface normal");
+	}
 
-        G4MaterialPropertiesTable* aMaterialPropertiesTable;
-        G4MaterialPropertyVector* Rindex;
+	if (OldMomentum * theGlobalNormal > 0.0) {
+	#ifdef G4OPTICAL_DEBUG
+		   G4ExceptionDescription ed;
+		   ed << " L200OpBoundaryProcess/PostStepDoIt(): "
+		      << " theGlobalNormal points in a wrong direction. "
+		      << G4endl;
+		   ed << "    The momentum of the photon arriving at interface (oldMomentum)"
+		      << " must exit the volume cross in the step. " << G4endl;
+		   ed << "  So it MUST have dot < 0 with the normal that Exits the new volume (globalNormal)." << G4endl;
+		   ed << "  >> The dot product of oldMomentum and global Normal is " << OldMomentum*theGlobalNormal << G4endl;
+		   ed << "     Old Momentum  (during step)     = " << OldMomentum << G4endl;
+		   ed << "     Global Normal (Exiting New Vol) = " << theGlobalNormal << G4endl;
+		   ed << G4endl;
+		   G4Exception("L200OpBoundaryProcess::PostStepDoIt", "OpBoun02",
+			       EventMustBeAborted,  // Or JustWarning to see if it happens repeatedbly on one ray
+			       ed,
+			      "Invalid Surface Normal - Geometry must return valid surface normal pointing in the right direction");
+	#else
+		   theGlobalNormal = -theGlobalNormal;
+	#endif
+		}
+	if(Material2->GetName() != theTPBMagicMaterialName
+	|| Material1->GetName() == theTPBMagicMaterialName
+	|| (lambda/aTrack.GetKineticEnergy()) < (theLArWL -1*nm)
+	|| (lambda/aTrack.GetKineticEnergy()) > (theLArWL +1*nm)
+	|| fcov > theProb){
 
-        aMaterialPropertiesTable = Material1->GetMaterialPropertiesTable();
-        if (aMaterialPropertiesTable) {
-                Rindex = aMaterialPropertiesTable->GetProperty("RINDEX");
-        }
-        else {
-                theStatus = NoRINDEX;
-                if ( verboseLevel > 0) BoundaryProcessVerbose();
-                aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
-                aParticleChange.ProposeTrackStatus(fStopAndKill);
-                return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-        }
+		if(verboseLevel>0){G4cout << "Ok no TPB magic conditions " << G4endl;}
+		aParticleChange.ProposeVelocity(aTrack.GetVelocity());
 
-        if (Rindex) {
-                Rindex1 = Rindex->Value(thePhotonMomentum);
-        }
-        else {
-                theStatus = NoRINDEX;
-                if ( verboseLevel > 0) BoundaryProcessVerbose();
-                aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
-                aParticleChange.ProposeTrackStatus(fStopAndKill);
-                return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-        }
 
-        theReflectivity =  1.;
-        theEfficiency   =  0.;
-        theTransmittance = 0.;
+		G4MaterialPropertiesTable* aMaterialPropertiesTable;
+		G4MaterialPropertyVector* Rindex;
 
-        theModel = glisur;
-        theFinish = polished;
+		aMaterialPropertiesTable = Material1->GetMaterialPropertiesTable();
+		if (aMaterialPropertiesTable) {
+			Rindex = aMaterialPropertiesTable->GetProperty("RINDEX");
+		}
+		else {
+			theStatus = NoRINDEX;
+			if ( verboseLevel > 0) BoundaryProcessVerbose();
+			aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
+			aParticleChange.ProposeTrackStatus(fStopAndKill);
+			return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		}
 
-        G4SurfaceType type = dielectric_dielectric;
+		if (Rindex) {
+			Rindex1 = Rindex->Value(thePhotonMomentum);
+		}
+		else {
+			theStatus = NoRINDEX;
+			if ( verboseLevel > 0) BoundaryProcessVerbose();
+			aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
+			aParticleChange.ProposeTrackStatus(fStopAndKill);
+			return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		}
 
-        Rindex = NULL;
-        OpticalSurface = NULL;
+		theReflectivity =  1.;
+		theEfficiency   =  0.;
+		theTransmittance = 0.;
 
-        G4LogicalSurface* Surface = NULL;
+		theModel = glisur;
+		theFinish = polished;
 
-        Surface = G4LogicalBorderSurface::GetSurface
-                  (pPreStepPoint ->GetPhysicalVolume(),
-                   pPostStepPoint->GetPhysicalVolume());
+		G4SurfaceType type = dielectric_dielectric;
 
-        if (Surface == NULL){
-          G4bool enteredDaughter=(pPostStepPoint->GetPhysicalVolume()
-                                  ->GetMotherLogical() ==
-                                  pPreStepPoint->GetPhysicalVolume()
-                                  ->GetLogicalVolume());
-          if(enteredDaughter){
-            Surface = G4LogicalSkinSurface::GetSurface
-              (pPostStepPoint->GetPhysicalVolume()->
-               GetLogicalVolume());
-            if(Surface == NULL)
-              Surface = G4LogicalSkinSurface::GetSurface
-              (pPreStepPoint->GetPhysicalVolume()->
-               GetLogicalVolume());
-          }
-          else {
-            Surface = G4LogicalSkinSurface::GetSurface
-              (pPreStepPoint->GetPhysicalVolume()->
-               GetLogicalVolume());
-            if(Surface == NULL)
-              Surface = G4LogicalSkinSurface::GetSurface
-              (pPostStepPoint->GetPhysicalVolume()->
-               GetLogicalVolume());
-          }
-        }
+		Rindex = NULL;
+		OpticalSurface = NULL;
 
-        if (Surface) OpticalSurface =
-           dynamic_cast <G4OpticalSurface*> (Surface->GetSurfaceProperty());
+		G4LogicalSurface* Surface = NULL;
 
-        if (OpticalSurface) {
+		Surface = G4LogicalBorderSurface::GetSurface
+			  (pPreStepPoint ->GetPhysicalVolume(),
+			   pPostStepPoint->GetPhysicalVolume());
 
-           type      = OpticalSurface->GetType();
-           theModel  = OpticalSurface->GetModel();
-           theFinish = OpticalSurface->GetFinish();
+		if (Surface == NULL){
+		  G4bool enteredDaughter=(pPostStepPoint->GetPhysicalVolume()
+					  ->GetMotherLogical() ==
+					  pPreStepPoint->GetPhysicalVolume()
+					  ->GetLogicalVolume());
+		  if(enteredDaughter){
+		    Surface = G4LogicalSkinSurface::GetSurface
+		      (pPostStepPoint->GetPhysicalVolume()->
+		       GetLogicalVolume());
+		    if(Surface == NULL)
+		      Surface = G4LogicalSkinSurface::GetSurface
+		      (pPreStepPoint->GetPhysicalVolume()->
+		       GetLogicalVolume());
+		  }
+		  else {
+		    Surface = G4LogicalSkinSurface::GetSurface
+		      (pPreStepPoint->GetPhysicalVolume()->
+		       GetLogicalVolume());
+		    if(Surface == NULL)
+		      Surface = G4LogicalSkinSurface::GetSurface
+		      (pPostStepPoint->GetPhysicalVolume()->
+		       GetLogicalVolume());
+		  }
+		}
 
-           aMaterialPropertiesTable = OpticalSurface->
-                                        GetMaterialPropertiesTable();
+		if (Surface) OpticalSurface =
+		   dynamic_cast <G4OpticalSurface*> (Surface->GetSurfaceProperty());
 
-           if (aMaterialPropertiesTable) {
+		if (OpticalSurface) {
 
-              if (theFinish == polishedbackpainted ||
-                  theFinish == groundbackpainted ) {
-                  Rindex = aMaterialPropertiesTable->GetProperty("RINDEX");
-                  if (Rindex) {
-                     Rindex2 = Rindex->Value(thePhotonMomentum);
-                  }
-                  else {
-                     theStatus = NoRINDEX;
-                     if ( verboseLevel > 0) BoundaryProcessVerbose();
-                     aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
-                     aParticleChange.ProposeTrackStatus(fStopAndKill);
-                     return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-                  }
-              }
+		   type      = OpticalSurface->GetType();
+		   theModel  = OpticalSurface->GetModel();
+		   theFinish = OpticalSurface->GetFinish();
 
-              PropertyPointer =
-                      aMaterialPropertiesTable->GetProperty("REFLECTIVITY");
-              PropertyPointer1 =
-                      aMaterialPropertiesTable->GetProperty("REALRINDEX");
-              PropertyPointer2 =
-                      aMaterialPropertiesTable->GetProperty("IMAGINARYRINDEX");
+		   aMaterialPropertiesTable = OpticalSurface->
+						GetMaterialPropertiesTable();
 
-              iTE = 1;
-              iTM = 1;
+		   if (aMaterialPropertiesTable) {
 
-              if (PropertyPointer) {
+		      if (theFinish == polishedbackpainted ||
+			  theFinish == groundbackpainted ) {
+			  Rindex = aMaterialPropertiesTable->GetProperty("RINDEX");
+			  if (Rindex) {
+			     Rindex2 = Rindex->Value(thePhotonMomentum);
+			  }
+			  else {
+			     theStatus = NoRINDEX;
+			     if ( verboseLevel > 0) BoundaryProcessVerbose();
+			     aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
+			     aParticleChange.ProposeTrackStatus(fStopAndKill);
+			     return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+			  }
+		      }
 
-                 theReflectivity =
-                          PropertyPointer->Value(thePhotonMomentum);
+		      PropertyPointer =
+			      aMaterialPropertiesTable->GetProperty("REFLECTIVITY");
+		      PropertyPointer1 =
+			      aMaterialPropertiesTable->GetProperty("REALRINDEX");
+		      PropertyPointer2 =
+			      aMaterialPropertiesTable->GetProperty("IMAGINARYRINDEX");
 
-              } else if (PropertyPointer1 && PropertyPointer2) {
+		      iTE = 1;
+		      iTM = 1;
 
-                 CalculateReflectivity();
+		      if (PropertyPointer) {
 
-              }
+			 theReflectivity =
+				  PropertyPointer->Value(thePhotonMomentum);
 
-              PropertyPointer =
-              aMaterialPropertiesTable->GetProperty("EFFICIENCY");
-              if (PropertyPointer) {
-                      theEfficiency =
-                      PropertyPointer->Value(thePhotonMomentum);
-              }
+		      } else if (PropertyPointer1 && PropertyPointer2) {
 
-              PropertyPointer =
-              aMaterialPropertiesTable->GetProperty("TRANSMITTANCE");
-              if (PropertyPointer) {
-                      theTransmittance =
-                      PropertyPointer->Value(thePhotonMomentum);
-              }
+			 CalculateReflectivity();
 
-              if ( theModel == unified ) {
-                PropertyPointer =
-                aMaterialPropertiesTable->GetProperty("SPECULARLOBECONSTANT");
-                if (PropertyPointer) {
-                         prob_sl =
-                         PropertyPointer->Value(thePhotonMomentum);
-                } else {
-                         prob_sl = 0.0;
-                }
+		      }
 
-                PropertyPointer =
-                aMaterialPropertiesTable->GetProperty("SPECULARSPIKECONSTANT");
-                if (PropertyPointer) {
-                         prob_ss =
-                         PropertyPointer->Value(thePhotonMomentum);
-                } else {
-                         prob_ss = 0.0;
-                }
+		      PropertyPointer =
+		      aMaterialPropertiesTable->GetProperty("EFFICIENCY");
+		      if (PropertyPointer) {
+			      theEfficiency =
+			      PropertyPointer->Value(thePhotonMomentum);
+		      }
 
-                PropertyPointer =
-                aMaterialPropertiesTable->GetProperty("BACKSCATTERCONSTANT");
-                if (PropertyPointer) {
-                         prob_bs =
-                         PropertyPointer->Value(thePhotonMomentum);
-                } else {
-                         prob_bs = 0.0;
-                }
-              }
-           }
-           else if (theFinish == polishedbackpainted ||
-                    theFinish == groundbackpainted ) {
-                      aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
-                      aParticleChange.ProposeTrackStatus(fStopAndKill);
-                      return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-           }
-        }
+		      PropertyPointer =
+		      aMaterialPropertiesTable->GetProperty("TRANSMITTANCE");
+		      if (PropertyPointer) {
+			      theTransmittance =
+			      PropertyPointer->Value(thePhotonMomentum);
+		      }
 
-        if (type == dielectric_dielectric ) {
-           if (theFinish == polished || theFinish == ground ) {
+		      if ( theModel == unified ) {
+			PropertyPointer =
+			aMaterialPropertiesTable->GetProperty("SPECULARLOBECONSTANT");
+			if (PropertyPointer) {
+				 prob_sl =
+				 PropertyPointer->Value(thePhotonMomentum);
+			} else {
+				 prob_sl = 0.0;
+			}
 
-              if (Material1 == Material2){
-                 theStatus = SameMaterial;
-                 if ( verboseLevel > 0) BoundaryProcessVerbose();
-                 return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-              }
-              aMaterialPropertiesTable =
-                     Material2->GetMaterialPropertiesTable();
-              if (aMaterialPropertiesTable)
-                 Rindex = aMaterialPropertiesTable->GetProperty("RINDEX");
-              if (Rindex) {
-                 Rindex2 = Rindex->Value(thePhotonMomentum);
-              }
-              else {
-                 theStatus = NoRINDEX;
-                 if ( verboseLevel > 0) BoundaryProcessVerbose();
-                 aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
-                 aParticleChange.ProposeTrackStatus(fStopAndKill);
-                 return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-              }
-           }
-        }
+			PropertyPointer =
+			aMaterialPropertiesTable->GetProperty("SPECULARSPIKECONSTANT");
+			if (PropertyPointer) {
+				 prob_ss =
+				 PropertyPointer->Value(thePhotonMomentum);
+			} else {
+				 prob_ss = 0.0;
+			}
 
-        if (type == dielectric_metal) {
+			PropertyPointer =
+			aMaterialPropertiesTable->GetProperty("BACKSCATTERCONSTANT");
+			if (PropertyPointer) {
+				 prob_bs =
+				 PropertyPointer->Value(thePhotonMomentum);
+			} else {
+				 prob_bs = 0.0;
+			}
+		      }
+		   }
+		   else if (theFinish == polishedbackpainted ||
+			    theFinish == groundbackpainted ) {
+			      aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
+			      aParticleChange.ProposeTrackStatus(fStopAndKill);
+			      return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		   }
+		}
 
-          DielectricMetal();
+		if (type == dielectric_dielectric ) {
+		   if (theFinish == polished || theFinish == ground ) {
 
-          // Uncomment the following lines if you wish to have
-          //         Transmission instead of Absorption
-          // if (theStatus == Absorption) {
-          //    return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
-          // }
+		      if (Material1 == Material2){
+			 theStatus = SameMaterial;
+			 if ( verboseLevel > 0) BoundaryProcessVerbose();
+			 return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		      }
+		      aMaterialPropertiesTable =
+			     Material2->GetMaterialPropertiesTable();
+		      if (aMaterialPropertiesTable)
+			 Rindex = aMaterialPropertiesTable->GetProperty("RINDEX");
+		      if (Rindex) {
+			 Rindex2 = Rindex->Value(thePhotonMomentum);
+		      }
+		      else {
+			 theStatus = NoRINDEX;
+			 if ( verboseLevel > 0) BoundaryProcessVerbose();
+			 aParticleChange.ProposeLocalEnergyDeposit(thePhotonMomentum);
+			 aParticleChange.ProposeTrackStatus(fStopAndKill);
+			 return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		      }
+		   }
+		}
 
-        }
-        else if (type == dielectric_LUT) {
+		if (type == dielectric_metal) {
 
-          DielectricLUT();
+		  DielectricMetal();
 
-        }
-        else if (type == dielectric_dielectric) {
+		  // Uncomment the following lines if you wish to have
+		  //         Transmission instead of Absorption
+		  // if (theStatus == Absorption) {
+		  //    return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		  // }
 
-          if ( theFinish == polishedbackpainted ||
-               theFinish == groundbackpainted ) {
-             DielectricDielectric();
-          }
-          else {
-             if ( !G4BooleanRand(theReflectivity) ) {
-                DoAbsorption();
-             }
-             else {
-                if ( theFinish == polishedfrontpainted ) {
-                   DoReflection();
-                }
-                else if ( theFinish == groundfrontpainted ) {
-                   theStatus = LambertianReflection;
-                   DoReflection();
-                }
-                else {
-                   DielectricDielectric();
-                }
-             }
-          }
-        }
-        else {
+		}
+		else if (type == dielectric_LUT) {
 
-          G4cerr << " Error: G4BoundaryProcess: illegal boundary type " << G4endl;
-          return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		  DielectricLUT();
 
-        }
+		}
+		else if (type == dielectric_dielectric) {
 
-        NewMomentum = NewMomentum.unit();
-        NewPolarization = NewPolarization.unit();
+		  if ( theFinish == polishedbackpainted ||
+		       theFinish == groundbackpainted ) {
+		     DielectricDielectric();
+		  }
+		  else {
+		     if ( !G4BooleanRand(theReflectivity) ) {
+			DoAbsorption();
+		     }
+		     else {
+			if ( theFinish == polishedfrontpainted ) {
+			   DoReflection();
+			}
+			else if ( theFinish == groundfrontpainted ) {
+			   theStatus = LambertianReflection;
+			   DoReflection();
+			}
+			else {
+			   DielectricDielectric();
+			}
+		     }
+		  }
+		}
+		else {
 
-        if ( verboseLevel > 0) {
-           G4cout << " New Momentum Direction: " << NewMomentum     << G4endl;
-           G4cout << " New Polarization:       " << NewPolarization << G4endl;
-           BoundaryProcessVerbose();
-        }
+		  G4cerr << " Error: G4BoundaryProcess: illegal boundary type " << G4endl;
+		  return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
 
-        aParticleChange.ProposeMomentumDirection(NewMomentum);
-        aParticleChange.ProposePolarization(NewPolarization);
+		}
 
-        if ( theStatus == FresnelRefraction ) {
-           G4MaterialPropertyVector* groupvel =
-           Material2->GetMaterialPropertiesTable()->GetProperty("GROUPVEL");
-           G4double finalVelocity = groupvel->Value(thePhotonMomentum);
-           aParticleChange.ProposeVelocity(finalVelocity);
-        }
+		NewMomentum = NewMomentum.unit();
+		NewPolarization = NewPolarization.unit();
 
-        return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+		if ( verboseLevel > 0) {
+		   G4cout << " New Momentum Direction: " << NewMomentum     << G4endl;
+		   G4cout << " New Polarization:       " << NewPolarization << G4endl;
+		   BoundaryProcessVerbose();
+		}
+
+		aParticleChange.ProposeMomentumDirection(NewMomentum);
+		aParticleChange.ProposePolarization(NewPolarization);
+
+		if ( theStatus == FresnelRefraction ) {
+		   G4MaterialPropertyVector* groupvel =
+		   Material2->GetMaterialPropertiesTable()->GetProperty("GROUPVEL");
+		   G4double finalVelocity = groupvel->Value(thePhotonMomentum);
+		   aParticleChange.ProposeVelocity(finalVelocity);
+		}
+
+		return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+	}
+	//TPB Trick
+	else{
+		theStatus = TPBMagic;
+		if(verboseLevel>0)G4cout << "Ok conditions are right Propose." << G4endl;
+		G4double secEnergy = lambda/(450*nm);
+
+		G4ThreeVector curdir = aTrack.GetMomentumDirection();
+		G4double cr = sqrt(curdir.getX()*curdir.getX() + curdir.getY()*curdir.getY());
+		G4double cphi = acos(curdir.getX()/cr);
+
+	  	G4double phi = cphi + pi + pi*(G4UniformRand()-0.5);
+	  	G4double pz = G4UniformRand();
+	  	G4double px = cos(phi);
+	  	G4double py = sin(phi);
+
+	   	G4ThreeVector newDir = G4ThreeVector(px,py,pz);
+	    	newDir = newDir.unit();
+	        aParticleChange.ProposeMomentumDirection(newDir);
+	    	aParticleChange.ProposeEnergy(secEnergy);
+
+		return G4VDiscreteProcess::PostStepDoIt(aTrack, aStep);
+	}
+
 }
 
 void L200OpBoundaryProcess::BoundaryProcessVerbose() const
@@ -500,6 +547,8 @@ void L200OpBoundaryProcess::BoundaryProcessVerbose() const
                 G4cout << " *** StepTooSmall *** " << G4endl;
         if ( theStatus == NoRINDEX )
                 G4cout << " *** NoRINDEX *** " << G4endl;
+	if ( theStatus == TPBMagic )
+                G4cout << " *** TPBMagic *** " << G4endl;
 }
 
 G4ThreeVector
@@ -966,11 +1015,11 @@ void L200OpBoundaryProcess::DielectricDielectric()
 // GetMeanFreePath
 // ---------------
 //
-G4double L200OpBoundaryProcess::GetMeanFreePath(const G4Track& ,
+G4double L200OpBoundaryProcess::GetMeanFreePath(const G4Track& aTrack,
                                               G4double ,
                                               G4ForceCondition* condition)
 {
-        *condition = Forced;
+        	*condition = Forced;
 
         return DBL_MAX;
 }

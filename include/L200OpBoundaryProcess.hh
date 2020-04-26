@@ -58,7 +58,8 @@ enum L200OpBoundaryProcessStatus {  Undefined,
                                   GroundTiOAirReflection,
                                   GroundTyvekAirReflection,
                                   GroundVM2000AirReflection,
-                                  GroundVM2000GlueReflection };
+                                  GroundVM2000GlueReflection,
+				  TPBMagic };
 
 class L200OpBoundaryProcess : public G4VDiscreteProcess
 {
@@ -100,6 +101,11 @@ public:
 
         L200OpBoundaryProcessStatus GetStatus() const;
         // Returns the current status.
+
+	//Magic setter
+	void setFiberHitProb(G4double value){theProb = value;}
+	void setMagicMaterialName(G4String value){theTPBMagicMaterialName = value;}
+	void setLArWL(G4double value){theLArWL = value;}
 
 private:
 
@@ -170,7 +176,11 @@ private:
 
         G4int iTE, iTM;
 
-        G4double kCarTolerance;
+        //Magic TPB variables
+	G4double kCarTolerance;
+	G4double theProb;
+	G4String theTPBMagicMaterialName;
+	G4double theLArWL;
 
 };
 

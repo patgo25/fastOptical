@@ -49,6 +49,8 @@
 using namespace std;
 using namespace CLHEP;
 
+const G4double lambda = twopi*1.973269602e-16 * m * GeV;
+G4double fiberDetProb = 0.;
 
 class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 {
@@ -57,7 +59,6 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithAString* fOutputFormatCmd;
     G4UIcmdWithAString* fOutputOptionCmd;
     G4UIcmdWithABool* fRecordAllStepsCmd;
-    G4UIcmdWithADouble* fSetFiberDetProbCmd;
     G4UIcmdWithADouble* fSetFiberAbsProbCmd;
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
@@ -89,7 +90,6 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     vector<G4int> fIRep;
 
 
-    G4double fiberDetProb;		//fiber detection
     G4double fiberAbsProb;		//fiber absorption
     map<G4VPhysicalVolume*, int> fVolIDMap;
 
@@ -122,11 +122,6 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fOutputOptionCmd->SetGuidance("  stepwise: one row per step");
       fOutputOptionCmd->SetGuidance("  eventwise: one row per event");
       fOption = kStepWise;
-
-      fSetFiberDetProbCmd = new G4UIcmdWithADouble("/optics/fiberDetProb", this);
-      fSetFiberDetProbCmd->SetDefaultValue(0.6);
-      fSetFiberDetProbCmd->SetGuidance("Set the detection probability of the fiber shrouds (coverage)!");
-      fiberDetProb = 0.;
 
       fSetFiberAbsProbCmd = new G4UIcmdWithADouble("/optics/fiberAbsProb", this);
       fSetFiberAbsProbCmd->SetDefaultValue(0.1);
@@ -171,7 +166,6 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       delete fOutputFormatCmd;
       delete fOutputOptionCmd;
       delete fRecordAllStepsCmd;
-      delete fSetFiberDetProbCmd;
       delete fSetFiberAbsProbCmd;
     }
 
@@ -211,10 +205,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       if(command == fRecordAllStepsCmd) {
         fRecordAllSteps = fRecordAllStepsCmd->GetNewBoolValue(newValues);
       }
-      if(command == fSetFiberDetProbCmd){
-	fiberDetProb = fSetFiberDetProbCmd->GetNewDoubleValue(newValues);
-      }
-      if(command == fSetFiberAbsProbCmd){
+     if(command == fSetFiberAbsProbCmd){
 	fiberAbsProb = fSetFiberAbsProbCmd->GetNewDoubleValue(newValues);
       }
     }
@@ -299,7 +290,6 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
         int verbosity = 4;
 
-		const G4Track* track = step->GetTrack();
       G4VAnalysisManager* man = GetAnalysisManager();
 
 
@@ -315,7 +305,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
     //Suche den L200OpBoundaryProcess:
     L200OpBoundaryProcess* boundary_proc=NULL;
-    G4ProcessManager* proc_man = track->GetDefinition()->GetProcessManager();
+    G4ProcessManager* proc_man = step->GetTrack()->GetDefinition()->GetProcessManager();
     int proc_num = proc_man->GetProcessListLength();
     G4ProcessVector* proc_vec = proc_man->GetProcessList();
     for(int i = 0; i < proc_num; i++){
@@ -325,9 +315,10 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         }
     }
     if(boundary_proc &&
-    track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()){
+    step->GetTrack()->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()){
         L200OpBoundaryProcessStatus boundaryStatus=boundary_proc->GetStatus();
-        switch(boundaryStatus){
+	G4double p = G4UniformRand();
+	switch(boundaryStatus){
         case Absorption:
             /*Do Nothing... */
 			if(verbosity>3){G4cout << "Photon absorbed @ boundary of "<<actualVolume << G4endl;}
@@ -343,12 +334,33 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 		case FresnelReflection:
             if(verbosity>3)G4cout << "FresnelReflection" << G4endl;
             break;
-		case FresnelRefraction:
+	case FresnelRefraction:
             if(verbosity>3){
 		G4cout << "FresnelRefraction"<<G4endl;
-		//G4cout << step->GetPreStepPoint()->GetMomentumDirection() << " to ";
-		//G4cout << step->GetPostStepPoint()->GetMomentumDirection() << G4endl;
-	    }
+		}
+		//Lets check if the photon is blue. Otherwise Prob is handled by TPB magic.
+		if((lambda/step->GetTrack()->GetKineticEnergy()) > 400*nm){
+	    	   if(actualVolume == "innerShroud" || actualVolume == "outerShroud"){
+	    		if(preVolume == "larVolume"){
+					//See if the photon gets into the fiber and absorbed
+					if(p <= fiberAbsProb*fiberDetProb){
+						if(verbosity>3){G4cout << "Yeees photon absorbed with a probabiltity of " << p << " < " << fiberAbsProb << G4endl;}
+						mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+						step->GetTrack()->SetTrackStatus(fStopAndKill);
+					}
+					//Ok so it hit the fiber and didn't get absobed -> Kill it
+					else if(p<= fiberDetProb){
+						step->GetTrack()->SetTrackStatus(fStopAndKill);
+						if(verbosity>3){G4cout << "Hit the shroud but was not absorbed -> KILL"<< G4endl;}
+					}
+					//Photon didn't hit a fiber -> let it go on
+
+		  	}
+		    }
+		}
+		else{
+		if(verbosity>3){G4cout << "Photon has WL of " << lambda/step->GetTrack()->GetKineticEnergy()/nm << " nm which is not blue -> Ignore "<< G4endl;}
+		}
             break;
         case TotalInternalReflection:
             if(verbosity>3)G4cout << "TotalInternalReflection" << G4endl;
@@ -378,74 +390,28 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 		case NotAtBoundary:
             if(verbosity>3)G4cout << "NotAtBoundary" << G4endl;
             break;
-		case SameMaterial:
+	case SameMaterial:
             if(verbosity>3){G4cout << "Flying from " << preVolume << " to " << actualVolume  << G4endl;}
-	    if(actualVolume == "innerShroud" || actualVolume == "outerShroud"){
-	    		if(preVolume == "larVolume"){
-				G4double u = G4UniformRand();
-				if(u <= fiberDetProb){
-					if(verbosity>3){G4cout << "Whuhu catched by " << actualVolume << " with a probabiltity of " << fiberDetProb << G4endl;}
-					//Lets roll again and check if the photon is absorbed or reemitted blue
-					G4double p = G4UniformRand();
-					if(p <= fiberAbsProb){
-						if(verbosity>3){G4cout << "Yeees photon absorbed with a probabiltity of " << fiberAbsProb << G4endl;}
-						mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
-						step->GetTrack()->SetTrackStatus(fStopAndKill);
-
-					}
-					else{
-						//G4double lambda = twopi*1.973269602e-16*m*GeV;
-						//G4ThreeVector currentDir = step->GetTrack()->GetMomentumDirection();
-						//G4double cr = sqrt(currentDir.getX()*currentDir.getX() +currentDir.getY()*currentDir.getY());
-						//G4double cphi =acos(currentDir.getX()/cr);
-						//Take current phi rotate by 180 deg and roate with +- 90 deg
-						//G4double phi = cphi + pi + pi*(G4UniformRand()-0.5);
-						//G4double pz = G4UniformRand();
-						//G4double px = cos(phi);
-						//G4double py = sin(phi);
-						//G4double r = lambda/(450*nm-128*nm);
-						//step->SetTotalEnergyDeposit(r)
-
-						//G4Track* tpbPhoton = step->GetTrack();
-						//Its possible so it is allowed
-						//G4SteppingManager* sm = G4EventManager::GetEventManager()->GetTrackingManager()->GetSteppingManager();
-						//G4VParticleChange* pc = sm->GetfParticleChange();
-						//G4Track* tpbPhoton = new G4Track();
-						//tpbPhoton->SetPosition(step->GetTrack()->GetPosition());
-						//tpbPhoton->SetMomentumDirection(G4ThreeVector(px,py,pz));
-						//tpbPhoton->SetKineticEnergy(lambda/(450*nm));
-						//tpbPhoton->SetParentID(step->GetTrack()->GetTrackID());
-						//tpbPhoton->SetTrackID(0);
-						//tpbPhoton->SetGlobalTime(step->GetTrack()->GetGlobalTime());
-
-						//pc->ProposeLocalEnergyDeposit(lambda/((450*nm-128*nm)));
-						//step->GetTrack()->SetTrackStatus(fStopAndKill);
-						//tpbPhoton->SetMomentumDirection(G4ThreeVector(px,py,pz));
-						//tpbPhoton->SetKineticEnergy(lambda/(450*nm));
-						//pc->AddSecondary(tpbPhoton);
-						//step->GetTrack()->SetTrackStatus(fStopAndKill);
-						//G4StackManager* stackm = G4EventManager::GetEventManager()->GetStackManager();
-						//stackm->PushOneTrack(tpbPhoton);
-						//step->GetTrack()->SetMomentumDirection(G4ThreeVector(px,py,pz));
-						//step->GetTack()->SetKineticEnergy(lambda/(450*nm));
-
-						//if(verbosity>3){
-						//	G4cout << "Well not this time lets reemit with 450 nm in pi and give it another go";
-						//	G4cout << " Shifting incoming of " << 180*cphi/pi << " deg to " << 180*phi/pi << "deg ";
-						//	G4cout << "and a WL of 450 nm" << G4endl;
-						//}
-
-			        	}
-				}
-
-			}
+	    break;
+	case TPBMagic:
+		if(verbosity>3){
+			G4cout <<"Doing TPB magic at " << preVolume << " to " << actualVolume  << G4endl;
+			G4cout <<"Changing momentum dir from ";
+			G4cout << step->GetPreStepPoint()->GetMomentumDirection() << " to ";
+			G4cout << step->GetPostStepPoint()->GetMomentumDirection() << G4endl;
+		}
+		//Here only roll for absorbtion since we already rolled in Boundary class for detection
+		if(p <= fiberAbsProb){
+			if(verbosity>3){G4cout << "Yeees 128 nm photon absorbed with a probabiltity of " << fiberAbsProb << G4endl;}
+			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+			step->GetTrack()->SetTrackStatus(fStopAndKill);
 
 		}
-            break;
+	    break;
         default:
-			if(verbosity>3)G4cout << "Unknown Photon-boundary-Action @ "<<actualVolume <<": "<<boundaryStatus<< G4endl;
+		if(verbosity>3)G4cout << "Unknown Photon-boundary-Action @ "<<actualVolume <<": "<<boundaryStatus<< G4endl;
             break;
-        }
+      }
     }}
 
 		return;
@@ -645,6 +611,7 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
     G4UIcommand* fTGDetectorCmd;
     G4UIcmdWithABool* fRandomSeedCmd;
     G4UIcmdWithAString* fListVolsCmd;
+    G4UIcmdWithADouble* fSetFiberDetProbCmd;
 	RunList* runList;
 
   public:
@@ -679,7 +646,13 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
       fListVolsCmd->SetGuidance("List name of all instantiated physical volumes");
       fListVolsCmd->SetGuidance("Optionally supply a regex pattern to only list matching volume names");
       fListVolsCmd->AvailableForStates(G4State_Idle, G4State_GeomClosed, G4State_EventProc);
-    }
+
+      fSetFiberDetProbCmd = new G4UIcmdWithADouble("/optics/fiberDetProb", this);
+      fSetFiberDetProbCmd->SetDefaultValue(0.6);
+      fSetFiberDetProbCmd->SetGuidance("Set the detection probability of the fiber shrouds (coverage)!");
+      fiberDetProb = 0.;
+
+}
 
     ~G4SimpleRunManager() {
       delete fDirectory;
@@ -688,12 +661,17 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
       delete fTGDetectorCmd;
       delete fRandomSeedCmd;
       delete fListVolsCmd;
+      delete fSetFiberDetProbCmd;
 
 		delete runList;	//have to do this to finalize written file
     }
 
     void SetNewValue(G4UIcommand *command, G4String newValues) {
-      if(command == fPhysListCmd) {
+
+      if(command == fSetFiberDetProbCmd){
+	fiberDetProb = fSetFiberDetProbCmd->GetNewDoubleValue(newValues);
+      }
+      else if(command == fPhysListCmd) {
 		G4VModularPhysicsList* gvmpl = (new G4PhysListFactory)->GetReferencePhysList(newValues);
 		//now let's manually patch in optical physics!
 		G4OpticalPhysics* opticalPhysics = new G4OpticalPhysics();
@@ -708,7 +686,11 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
   		opticalPhysics->SetTrackSecondariesFirst(kScintillation,true);
 		opticalPhysics->SetTrackSecondariesFirst(kAbsorption,true);
 		opticalPhysics->SetTrackSecondariesFirst(kWLS,true);
+
 		L200FiberPhysics* fp = new L200FiberPhysics();
+		fp->setMagicMaterialName("LiquidArgonFiber");
+		fp->setLArWL(128*nm);
+		fp->setFiberHitProb(fiberDetProb);
 		gvmpl->RegisterPhysics(fp);
 
         SetUserInitialization(gvmpl);

@@ -298,7 +298,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         fVolIDMap[vpv] = id;
       }
 
-        //int verbosity = 4;
+        //int verbosity = 4;		//wir haben dafür jetzt nen Command!
 
         //int verbosity = 2;
 

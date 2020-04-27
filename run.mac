@@ -1,7 +1,6 @@
 /run/verbose 1
-/event/verbose  1
-/tracking/verbose 1
-
+/event/verbose  0
+/tracking/verbose 0
 
 /g4simple/setRandomSeed true
 #/random/setSeed 12345678
@@ -46,6 +45,7 @@
 #/g4simple/recordAllSteps
 
 /g4simple/verbose 2
+/generator/verbose 0
 
 #set geometry
 /geometry/innerShroud/innerRadius 122.5 mm

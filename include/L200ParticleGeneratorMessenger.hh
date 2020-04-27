@@ -8,6 +8,7 @@
 #include "G4UIcmdWith3VectorAndUnit.hh"
 #include "G4UIcmdWithADouble.hh"
 #include "G4UIcmdWithABool.hh"
+#include "G4UIcmdWithAnInteger.hh"
 
 //---------------------------------------------------------------------------//
 
@@ -35,6 +36,7 @@ private:
   G4UIcmdWithADoubleAndUnit* fLiquidArgonSetBinWidth;
   G4UIcmdWithADouble* fLiquidArgonSetNParticles;
   G4UIcmdWithABool* fLiquidArgonSet1D;
+  G4UIcmdWithAnInteger* fSetVerboseCmd;
 
 };
 #endif

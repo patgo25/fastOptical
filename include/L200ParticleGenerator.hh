@@ -48,6 +48,7 @@ class L200ParticleGenerator
     void SetBinWidth(G4double width) {fBinWidth = width;}
     void SetNParticles(G4double N) {fNParticles = N;}
     void is1DScan(G4bool b){fis1D =b;}
+	void setVerbosity(G4int verbose){verbosity = verbose;};
 
 	//methods called from above (RunList)
 	//to be called BEFORE STARTING ANY RUN!!!
@@ -60,6 +61,8 @@ class L200ParticleGenerator
   private:
     static const G4double LambdaE;
     G4ParticleGun*	fParticleGun;
+	G4int verbosity;	
+	
     //particle properties
     G4double  fCurrentEnergy; // energy of current particle
     G4ThreeVector fCurrentPosition; // current position of particle

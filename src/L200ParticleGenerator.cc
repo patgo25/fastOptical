@@ -25,7 +25,7 @@ using namespace CLHEP;
 const G4double L200ParticleGenerator::LambdaE = twopi *1.973269602e-16 * m * GeV;
 
 L200ParticleGenerator::L200ParticleGenerator()
-	: scanAngle(2*M_PI/28), flatVoxelIndex(0)
+	: scanAngle(2*M_PI/28), flatVoxelIndex(0), verbosity(0)
 {
 	fMessenger = new L200ParticleGeneratorMessenger(this);
 	fParticleGun = new G4ParticleGun(1);
@@ -57,7 +57,7 @@ int L200ParticleGenerator::nextVoxel(){
 		xMin = 0;
 		xBins = fRadiusMax/fBinWidth;
 	}
-  if(flatVoxelIndex == 0){
+  if(flatVoxelIndex == 0 && verbosity >= 1){
     G4cout<<"N bins XY "<<xBins*yBins<<" x/y Max "<<xMax/cm<<"(cm), x/y Min "<<fRadiusMin/cm<<"(cm), Z "<<fZ<<"(cm), binWidth "<<fBinWidth/cm<<"(cm)..."<< fNParticles<<" particles per voxel, with "<<fNParticles*xBins*yBins<<" photons generated"<<G4endl;
   }
 
@@ -88,12 +88,12 @@ int L200ParticleGenerator::nextVoxel(){
 		if(currentVoxel.yPos <= tan(scanAngle)*(currentVoxel.xPos+currentVoxel.xWid) && 
 			currentVoxel.xPos*currentVoxel.xPos+currentVoxel.yPos*currentVoxel.yPos <= fRadiusMax*fRadiusMax) break;
 		
-		G4cout << "Skipping voxel "<<currentVoxel<<" for symmetry reasons" << G4endl;
+		if(verbosity >= 3) G4cout << "Skipping voxel "<<currentVoxel<<" for symmetry reasons" << G4endl;
 
 		flatVoxelIndex++;	//increment if volume skipped
 	}
 
-	G4cout << "Will use voxel "<<currentVoxel<<" in the following." << G4endl;
+	if(verbosity >= 3) G4cout << "Will use voxel "<<currentVoxel<<" in the following." << G4endl;
 
 	//### Part III: increment index for next call & report particle count ###
 	flatVoxelIndex++;	//increment after --> 1st voxel is 0
@@ -152,11 +152,11 @@ void L200ParticleGenerator::PositionDecider(G4double xPos,G4double yPos,G4double
     	   rpos.setX(1000000);rpos.setY(1000000);rpos.setZ(1000000);
 	   // if error counter exceeds, we do not want to produce a photon hence the large values of co-ordinates
     	   fCurrentPosition = rpos;
-    	   G4cout<< "LAr error has exceeded 100" << G4endl;
+    	   if(verbosity >= 0) G4cout<< "LAr error has exceeded 100" << G4endl;
     	   break;
   	}
   }
-  G4cout<<"Generator vertex "<<rpos<<G4endl;
+  if(verbosity >= 4) G4cout<<"Generator vertex "<<rpos<<G4endl;
   fCurrentPosition = rpos;
 
 }

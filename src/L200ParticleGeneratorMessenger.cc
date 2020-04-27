@@ -60,6 +60,8 @@ L200ParticleGeneratorMessenger::L200ParticleGeneratorMessenger(L200ParticleGener
   fLiquidArgonSet1D = new G4UIcmdWithABool("/generator/Set1D",this);
   fLiquidArgonSet1D->SetGuidance("Set if the voxel probing is 1 or two dimensional");
 
+  fSetVerboseCmd = new G4UIcmdWithAnInteger("/generator/verbose",this);
+  fSetVerboseCmd->SetGuidance("Sets verbosity of generator.");
 }
 
 
@@ -96,5 +98,7 @@ void L200ParticleGeneratorMessenger::SetNewValue(G4UIcommand *cmd, G4String str)
   }
   else if(cmd == fLiquidArgonSet1D){
     fLiquidArgonGenerator->is1DScan(fLiquidArgonSet1D->GetNewBoolValue(str));
-  }
+  }else if(cmd == fSetVerboseCmd){
+		fLiquidArgonGenerator->setVerbosity(fSetVerboseCmd->GetNewIntValue(str));
+	  }
 }

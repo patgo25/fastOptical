@@ -62,7 +62,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithABool* fRecordAllStepsCmd;
     G4UIcmdWithADouble* fSetFiberAbsProbCmd;
 	  G4UIcmdWithAnInteger* fSetVerboseCmd;
-  
+
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
     enum EOption { kStepWise, kEventWise };
@@ -140,7 +140,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fRecordAllSteps = false;
 
 	  fSetVerboseCmd = new G4UIcmdWithAnInteger("/g4simple/verbose", this);
-	  fSetFiberDetProbCmd->SetGuidance("Sets verbosity of stepping.");
+	  fSetVerboseCmd->SetGuidance("Sets verbosity of stepping.");
     }
 
     G4VAnalysisManager* GetAnalysisManager() {
@@ -298,7 +298,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
         fVolIDMap[vpv] = id;
       }
 
-        int verbosity = 4;
+        //int verbosity = 4;
 
         //int verbosity = 2;
 

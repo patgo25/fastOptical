@@ -62,7 +62,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithABool* fRecordAllStepsCmd;
     G4UIcmdWithADouble* fSetFiberAbsProbCmd;
 	  G4UIcmdWithAnInteger* fSetVerboseCmd;
-  
+
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
     enum EOption { kStepWise, kEventWise };

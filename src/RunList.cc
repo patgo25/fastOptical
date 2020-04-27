@@ -46,13 +46,13 @@ void RunList::startRuns(){
 	G4RunManager* rm = G4RunManager::GetRunManager();
 	openFile();
 	while(true){
-		int nrPrimaries = generator->nextVoxel();
+		G4int nrPrimaries = generator->nextVoxel();
 		if(nrPrimaries == 0) break;
 		rm->BeamOn(nrPrimaries);
 		std::cout << " (0) run in voxel "<<generator->getCurrentVoxel()<<" ended: "<<std::endl;
 		print(mra);
 
-		writeRun();
+		writeRun(nrPrimaries);
 	}
 	std::cout << "Runs done "<<std::endl;
 }
@@ -63,11 +63,12 @@ void RunList::openFile(){
     //ntuples are declared BEFORE the actual file is opened
     //see G4Simple for the reason
     //see lines 242 ff
-    analysis->CreateNtuple("map","geant4 map data");
+    analysis->CreateNtuple("map","geant4 map data");		
     analysis->CreateNtupleDColumn("xPos");//D for double
     analysis->CreateNtupleDColumn("yPos");
     analysis->CreateNtupleDColumn("zPos");
     analysis->CreateNtupleIColumn("counts"); //I for int
+	analysis->CreateNtupleIColumn("initialNr"); //I for int
     //more if you want...
 
     analysis->FinishNtuple();
@@ -82,17 +83,19 @@ void RunList::clearVars(){
 	//leave empty as we do not have vectors
 }
 
-void RunList::writeRun(){
+void RunList::writeRun(G4int nrPrimaries){
 	L200ParticleGenerator::Voxel voxel = generator->getCurrentVoxel();
 	voxelX = voxel.xPos + 0.5*voxel.xWid;
 	voxelY = voxel.yPos + 0.5*voxel.yWid;
 	voxelZ = voxel.zPos + 0.5*voxel.zWid;
 	count = mra->getCount(1);	//should now have only cnts in volumes with ID 1 (check macro!!!)
+	initialNr = nrPrimaries;
 
-	analysis->FillNtupleDColumn(0, voxelX);
+	analysis->FillNtupleDColumn(0, voxelX);		//dont mess up ordering!
 	analysis->FillNtupleDColumn(1, voxelY);
 	analysis->FillNtupleDColumn(2, voxelZ);
 	analysis->FillNtupleIColumn(3, count);
+	analysis->FillNtupleIColumn(4, initialNr);
 
 	analysis->AddNtupleRow();
 

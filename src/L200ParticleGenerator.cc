@@ -25,7 +25,7 @@ using namespace CLHEP;
 const G4double L200ParticleGenerator::LambdaE = twopi *1.973269602e-16 * m * GeV;
 
 L200ParticleGenerator::L200ParticleGenerator()
-	: flatVoxelIndex(0)
+	: scanAngle(2*M_PI/28), flatVoxelIndex(0)
 {
 	fMessenger = new L200ParticleGeneratorMessenger(this);
 	fParticleGun = new G4ParticleGun(1);
@@ -43,44 +43,59 @@ L200ParticleGenerator::~L200ParticleGenerator()
 
 int L200ParticleGenerator::nextVoxel(){
 			
-
-	G4double xMax = fRadiusMax, xMin = -fRadiusMax;
-  G4int xBins = fRadiusMax*2/fBinWidth;
-  G4double yMax  = fRadiusMax, yMin = -fRadiusMax;
-  G4int yBins = fRadiusMax*2/fBinWidth;
-  if(fis1D){
-    yMax = 0;
-    yMin = 0;
-    yBins = 1;
-    xMin = 0;
-    xBins = fRadiusMax/fBinWidth;
-  }
+	//#### Part I: make voxel pattern over 1st quadrant ### 
+	G4double xMax = fRadiusMax;
+	G4double xMin = 0.;//-fRadiusMax;
+  	G4int xBins = (xMax-xMin)/fBinWidth;///fRadiusMax*2/fBinWidth;
+  	G4double yMax  = fRadiusMax; 
+	G4double yMin = 0.;//-fRadiusMax;
+  	G4int yBins = (yMax-yMin)/fBinWidth;//fRadiusMax*2/fBinWidth;
+	if(fis1D){
+		yMax = 0;
+		yMin = 0;
+		yBins = 1;
+		xMin = 0;
+		xBins = fRadiusMax/fBinWidth;
+	}
   if(flatVoxelIndex == 0){
     G4cout<<"N bins XY "<<xBins*yBins<<" x/y Max "<<xMax/cm<<"(cm), x/y Min "<<fRadiusMin/cm<<"(cm), Z "<<fZ<<"(cm), binWidth "<<fBinWidth/cm<<"(cm)..."<< fNParticles<<" particles per voxel, with "<<fNParticles*xBins*yBins<<" photons generated"<<G4endl;
   }
-	if(flatVoxelIndex == xBins*yBins) return 0;		//escape condition
 
-	//decide indices
-	int iBinY = flatVoxelIndex / xBins;		//int division @ wörk
-	int iBinX = flatVoxelIndex % xBins;
+	//### Part II: define dimensions of current voxel; skipping if exceeds angle ###
+	while(true){	//loop should not affect 1D case (break always after 1st call)
+		if(flatVoxelIndex == xBins*yBins) return 0;		//escape condition
 
-
-	//decide positions
-      G4double x = xMin + iBinX*fBinWidth;
-      G4double y = yMin + iBinY*fBinWidth;
-      G4cout<<"Generating point randomly ("<<x<<","<<y<<","<<fZ<<")"<<G4endl;
-
-	currentVoxel.xPos = x;
-	currentVoxel.yPos = y;
-	currentVoxel.zPos = fZ;				//TODO here if z free
-
-	currentVoxel.xWid = fBinWidth;
-	currentVoxel.yWid = fBinWidth;			//could y also make 0. width
-	currentVoxel.zWid = 0.;
-	
+		//decide indices
+		int iBinY = flatVoxelIndex / xBins;		//int division @ wörk
+		int iBinX = flatVoxelIndex % xBins;
 
 
+		//decide positions
+		  G4double x = xMin + iBinX*fBinWidth;
+		  G4double y = yMin + iBinY*fBinWidth;
+		  //G4cout<<"Generating point randomly ("<<x<<","<<y<<","<<fZ<<")"<<G4endl;
 
+		currentVoxel.xPos = x;
+		currentVoxel.yPos = y;
+		currentVoxel.zPos = fZ;				//TODO here if z free
+
+		currentVoxel.xWid = fBinWidth;
+		currentVoxel.yWid = fBinWidth;			
+		currentVoxel.zWid = 0.;				//currently  not passed to decider...
+		
+		//escape skip loop in case bottom right point of voxel within angle
+		// and bottom left point is still within radius
+		if(currentVoxel.yPos <= tan(scanAngle)*(currentVoxel.xPos+currentVoxel.xWid) && 
+			currentVoxel.xPos*currentVoxel.xPos+currentVoxel.yPos*currentVoxel.yPos <= fRadiusMax*fRadiusMax) break;
+		
+		G4cout << "Skipping voxel "<<currentVoxel<<" for symmetry reasons" << G4endl;
+
+		flatVoxelIndex++;	//increment if volume skipped
+	}
+
+	G4cout << "Will use voxel "<<currentVoxel<<" in the following." << G4endl;
+
+	//### Part III: increment index for next call & report particle count ###
 	flatVoxelIndex++;	//increment after --> 1st voxel is 0
 	return fNParticles;
 }
@@ -153,7 +168,7 @@ G4bool L200ParticleGenerator::IsInArgon(G4ThreeVector rpos)
   G4Navigator* theNavigator = G4TransportationManager::GetTransportationManager()->GetNavigatorForTracking();
   G4VPhysicalVolume* myVolume = theNavigator->LocateGlobalPointAndSetup(myPoint);
   if(myVolume->GetName() == "larVolume") isit = true;
-  G4cout<< " The current material is " << myVolume->GetName() << " okay " <<G4endl;
+  //G4cout<< " The current material is " << myVolume->GetName() << " okay " <<G4endl;
   return isit;
 }
 

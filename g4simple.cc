@@ -21,6 +21,7 @@
 #include "G4UIcmdWithAString.hh"
 #include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithADouble.hh"
+#include "G4UIcmdWithAnInteger.hh"
 #include "G4GDMLParser.hh"
 #include "G4TouchableHandle.hh"
 #include "G4PhysicalVolumeStore.hh"
@@ -60,11 +61,14 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
     G4UIcmdWithAString* fOutputOptionCmd;
     G4UIcmdWithABool* fRecordAllStepsCmd;
     G4UIcmdWithADouble* fSetFiberAbsProbCmd;
+	  G4UIcmdWithAnInteger* fSetVerboseCmd;
+  
     enum EFormat { kCsv, kXml, kRoot, kHdf5 };
     EFormat fFormat;
     enum EOption { kStepWise, kEventWise };
     EOption fOption;
     bool fRecordAllSteps;
+	int verbosity;
 
     vector< pair<string,string> > fPatternPairs;	//have to throw out regex due to ancient gcc 4.8.x not supporting it
 
@@ -96,7 +100,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 	MapRunAction* mra;
 
   public:
-    G4SimpleSteppingAction(MapRunAction* mra) : fNEvents(0), fEventNumber(0), mra(mra) {
+    G4SimpleSteppingAction(MapRunAction* mra) : fNEvents(0), fEventNumber(0), mra(mra), verbosity(4) {
       ResetVars();
 
       fVolIDCmd = new G4UIcommand("/g4simple/setVolID", this);
@@ -134,6 +138,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fRecordAllStepsCmd->SetDefaultValue(true);
       fRecordAllStepsCmd->SetGuidance("Write out every single step, not just those in sensitive volumes.");
       fRecordAllSteps = false;
+
+	  fSetVerboseCmd = new G4UIcmdWithAnInteger("/g4simple/verbose", this);
+	  fSetFiberDetProbCmd->SetGuidance("Sets verbosity of stepping.");
     }
 
     G4VAnalysisManager* GetAnalysisManager() {
@@ -208,6 +215,9 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
      if(command == fSetFiberAbsProbCmd){
 	fiberAbsProb = fSetFiberAbsProbCmd->GetNewDoubleValue(newValues);
       }
+	  if(command == fSetVerboseCmd){
+		verbosity = fSetVerboseCmd->GetNewIntValue(newValues);
+	  }
     }
 
     void ResetVars() {
@@ -289,6 +299,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       }
 
         int verbosity = 4;
+
+        //int verbosity = 2;
 
       G4VAnalysisManager* man = GetAnalysisManager();
 
@@ -414,7 +426,7 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       }
     }}
 
-		return;
+		return;		//TODO dirty trick to shut off normal writing to not interfere with custom
 
 		/*  TEST --------------------- */
 

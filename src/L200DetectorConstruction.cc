@@ -34,6 +34,7 @@
 #include "G4RotationMatrix.hh"
 #include "G4Region.hh"
 #include "G4ios.hh"
+#include "G4AssemblyVolume.hh"
 
 
 #include "G4Transform3D.hh"
@@ -44,7 +45,7 @@ using namespace CLHEP;
 // = = = = = = = = = = = KONSTRUKTOR & DESTRUKTOR = = = = = = = = = = = = = =
 
 L200DetectorConstruction::L200DetectorConstruction()
-	: G4VUserDetectorConstruction()
+	: G4VUserDetectorConstruction(), geAssembly(NULL)
 {
 	det_briefTaube = new L200DetectorMessenger(this);
 
@@ -64,6 +65,7 @@ L200DetectorConstruction::L200DetectorConstruction()
 	copper_mat		= NULL;
 	tetraTex_mat		= NULL;
 	TPB_mat			= NULL;
+	enrGe_mat = NULL;
 
 	InitializeDimensions();
 	InitializeRotations();
@@ -114,6 +116,13 @@ void L200DetectorConstruction::InitializeDimensions(){
 	wslrTPBThickness = 0.001*mm;
 	wslrHeight = 3500*mm;
 
+	geDiscHeight = 100*mm;
+	geDiscRad = 40*mm;				//TODO finalize at some point
+	geDiscGap = 50*mm;
+	geArrayRad = 200*mm;			//TODO finalize at some point
+	geDetectorsInString = 7;		//should be 7*10cm+6*5cm = 1m total
+	geStringCount = 14;				//defines the symmetry angle: 360/(14*2) ~ 12.8°
+
 	//LAr optical
 	lArAbsVUV = 20*cm;
 	lArAbsVis = 1000*m;
@@ -150,6 +159,21 @@ void L200DetectorConstruction::InitializeMaterials(){
 	//G4Element* elCl = new G4Element(name="Chlorine",symbol="Cl",z=17.,a=35.45*g/mole);
 	G4Element* elF = new G4Element(name="Fluorine","F",Z=9.,M=19.00*g/mole);
 	G4Element* elC = new G4Element(name="Carbon","C",Z=6.,M=12.011*g/mole);
+
+	G4Isotope* Ge70 = new G4Isotope(name="Ge70",  32, 70, 69.92*g/mole);
+  	G4Isotope* Ge72 = new G4Isotope(name="Ge72",  32, 72, 71.92*g/mole);
+  	G4Isotope* Ge73 = new G4Isotope(name="Ge73",  32, 73, 73.0*g/mole);
+ 	G4Isotope* Ge74 = new G4Isotope(name="Ge74",  32, 74, 74.0*g/mole);
+  	G4Isotope* Ge76 = new G4Isotope(name="Ge76",  32, 76, 76.0*g/mole);
+
+	M = 75.71*g/mole;
+  	G4int nIsotopes=5;
+	G4Element* elGeEnr = new G4Element(name="enrichedGermanium", symbol="GeEnr",nIsotopes);
+  	elGeEnr->AddIsotope(Ge70,abundance= 0.0*perCent);
+  	elGeEnr->AddIsotope(Ge72,abundance= 0.1*perCent);
+  	elGeEnr->AddIsotope(Ge73,abundance= 0.2*perCent);
+  	elGeEnr->AddIsotope(Ge74,abundance= 13.1*perCent);
+  	elGeEnr->AddIsotope(Ge76,abundance= 86.6*perCent);
 
 	//Some nice LAr
   	density=1.390*g/cm3;
@@ -242,6 +266,11 @@ void L200DetectorConstruction::InitializeMaterials(){
 	mptLArFiber->AddProperty("ABSLENGTH",photonEnergy,lArAbsorption,NUM);
 
 	lAr_mat_fiber->SetMaterialPropertiesTable(mptLAr);
+	
+	// enriched germanium
+  	density = 5.56*g/cm3;//cryogenic temperature (at room temperature: 5.54*g/cm3)
+  	enrGe_mat = new G4Material(name="EnrichedGe", density, 1);
+  	enrGe_mat->AddElement(elGeEnr,natoms=1);
 
 
 	//World
@@ -293,6 +322,8 @@ G4VPhysicalVolume* L200DetectorConstruction::ConstructDetector(){
 	BuildWSLRCopper();
 	BuildWSLRTetra();
 	BuildWSLRTPB();
+	G4cout << "Now come the detectors!"<<G4endl;
+	BuildGeDetectors();
 	G4cout << "Build optics" << G4endl;
 	BuildOptics();
 
@@ -309,6 +340,9 @@ G4VPhysicalVolume* L200DetectorConstruction::ConstructDetector(){
     	// Assignment of the visualization attributes to the logical volume
     	cryostatPhys->GetLogicalVolume()->SetVisAttributes(cryostatVisAtt);
     	worldPhys->GetLogicalVolume()->SetVisAttributes(worldVisAtt);
+
+	G4cout << "Doing a sanity check. Keep fingers crossed!"<<G4endl;
+	sanityCheck();
 
 	return worldPhys;
 }
@@ -531,6 +565,38 @@ void L200DetectorConstruction::BuildWSLRTPB(){
 
 }
 
+//detectörs
+//without any optical surface added to the detectors, I see always LambertianReflection of 128 nm photons.
+//I guess it's due to the LocgicalSkinSurface attached to the larVolume
+//lets see if it gets overwritten by a LogicalBorderSurface...
+void L200DetectorConstruction::BuildGeDetectors(){
+	G4Tubs* geDisc_tub = new G4Tubs("Ge_detector",0,geDiscRad,geDiscHeight/2.,0,2*M_PI);
+	/*G4LogicalVolume* */geDisc_log = new G4LogicalVolume(geDisc_tub,enrGe_mat,"Ge_detector");
+	
+	G4double stringFullHeight = geDetectorsInString*geDiscHeight+(geDetectorsInString-1)*geDiscGap;
+
+	//using again the assembly to create a nice pattern
+	delete geAssembly;	//delete old one to prevent leak; deleting NULL is unproblematic
+	/*G4AssemblyVolume* */geAssembly = new G4AssemblyVolume();
+	//location of disc within assembly:
+	G4RotationMatrix Ra(0.,0.,0.); G4ThreeVector radialVect; 
+	//location of assembly in LAr:
+	G4RotationMatrix Rm = G4RotationMatrix(0.,0.,0.); G4ThreeVector Tm = G4ThreeVector(0.,0.,0.);
+
+	for(int i = 0; i < geStringCount; i++){		//outer: different strings
+		radialVect.setRThetaPhi(geArrayRad,0.5*M_PI,2.*i*M_PI/geStringCount);
+		for(int j = 0; j < geDetectorsInString; j++){
+			G4ThreeVector verticalVect(0.,0.,-stringFullHeight/2.+(j+0.5)*geDiscHeight+j*geDiscGap);
+			G4ThreeVector sum = radialVect + verticalVect;
+			geAssembly->AddPlacedVolume(geDisc_log, sum, &Ra);
+		}
+	}
+
+	geAssembly->MakeImprint(lArPhys->GetLogicalVolume(), Tm, &Rm);
+	
+}
+
+
 void L200DetectorConstruction::UpdateGeometry()
 {
 	G4cout << "Geometry updated" << G4endl;
@@ -618,6 +684,26 @@ void L200DetectorConstruction::BuildOptics()
 	sfOutOuter->SetMaterialPropertiesTable(mptOutOuter);
 	new G4LogicalBorderSurface("OuterFiber_TO_LAr",fiberShroudOuterPhys,lArPhys,sfOutOuter);
 
+	//ge optical surface (only inward; light coming out of Ge should be rare...)
+	//taken from MaGe: /legendgeometry/src/LGND_200_OpticalSurfaces.cc | 275 ("LArToGe")	
+	// and materials/src/MGLGNDOpticalMaterialProperties.cc
+	//reflectivity from generators/data/Reflectivity_Ge.dat (copied to data folder)	
+	{		//using nice empty scope to prevent local name clash
+	G4OpticalSurface* sfGe = new G4OpticalSurface("LArToGe",unified,groundfrontpainted,dielectric_metal,0.5);	//last val: smoothness
+	G4double reflectivity[NUM] = {0.3563,0.6500};//keep in mind: optical (450nm), VUV
+	G4double absorption[NUM] = {1*nm,1*nm};	//dummy; from MaGe
+	G4double rIndex[NUM] = {1.25, 1.25};	//like in MaGe; commented out in MPT, however
+	G4double efficiency[NUM] = {0., 0.};	//unlike MaGe, we don't think that Ge detects light very well
+	G4MaterialPropertiesTable *mpt = new G4MaterialPropertiesTable();
+	mpt->AddProperty("REFLECTIVITY",photonEnergy,reflectivity,NUM);
+	mpt->AddProperty("EFFICIENCY",photonEnergy,efficiency,NUM);
+	mpt->AddProperty("ABSLENGTH", photonEnergy, absorption, NUM);
+  //mpt->AddProperty("RINDEX", photonEnergy, rIndex, NUM);
+	sfGe->SetMaterialPropertiesTable(mpt);
+	new G4LogicalSkinSurface("Ge_Surface",geDisc_log,sfGe);
+	}
+	
+
 	//Give LAr volume a refractive skin
 	//G4double lArRefIndex[NUM]={LArRefIndex(tpbWL),LArRefIndex(lArWL)};
 	G4MaterialPropertiesTable *mptLAr = new G4MaterialPropertiesTable();
@@ -626,6 +712,8 @@ void L200DetectorConstruction::BuildOptics()
 	G4OpticalSurface* sfLAr = new G4OpticalSurface("LAr_Surface",unified,groundfrontpainted, dielectric_dielectric);
 	sfLAr->SetMaterialPropertiesTable(mptLAr);
 	new G4LogicalSkinSurface("LAr_Surface",lArPhys->GetLogicalVolume(),sfLAr);
+
+	
 
 
 
@@ -685,3 +773,55 @@ G4double L200DetectorConstruction::LArRayLength(G4double lambda, G4double temp)
   if ( h > (1.0 / (0.1 * nanometer)) ) h = 1.0 / (0.1 * nanometer); // just a precaution
   return ( 1.0 / h );
 }
+
+
+
+//metod with licence to kill the run
+void L200DetectorConstruction::sanityCheck(){
+	if(hneck+htopcylbot+hlittlecyl>=world_height || rcyl >= world_len || rcyl >= world_wid ){
+		G4Exception("L200DetectorConstruction::sanityCheck","cryoCrashesWorld",FatalException,"volume dimension conflict between world & cryostat (i.e. cryostat is too fat)");
+	}
+	if(geDiscHeight*geDetectorsInString + geDiscGap*(geDetectorsInString-1) > htopcylbot ){
+		G4Exception("L200DetectorConstruction::sanityCheck","stringsTooLong",FatalException,"ge detector strings exceed cryo height");
+	}
+	if(geArrayRad - geDiscRad <= innerShroudOuterR){
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchInnerShroud",FatalException,"ge detector strings touch inner fiber shroud");	
+	}
+	if(geArrayRad + geDiscRad >= outerShroudInnerR){
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",FatalException,"ge detector strings touch outer fiber shroud");	
+	}
+	if(geArrayRad*2*M_PI <= geDiscRad*2 * geStringCount ){
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringsTouchEachOther",FatalException,"ge detector strings too crowded & touch each other");	
+	}
+	//TODO further checks
+	
+	//std::cout <<geArrayRad*2*M_PI <<" "<< <<" -> "<<geDiscRad*2 * geDetectorsInString<<std::endl;
+
+	G4cout << "Sanity check finished successful." << G4endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

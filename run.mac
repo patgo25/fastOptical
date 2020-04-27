@@ -2,6 +2,7 @@
 /event/verbose  1
 /tracking/verbose 1
 
+
 /g4simple/setRandomSeed true
 #/random/setSeed 12345678
 
@@ -33,6 +34,7 @@
 # Example setting a full volume name (exact match):
 /g4simple/setVolID innerShroud 1
 /g4simple/setVolID outerShroud 1    #dont distinguish for now
+#the following volumes should NOT show up as detectors any more
 /g4simple/setVolID wslrCopper 3  #TODO keep typo?
 /g4simple/setVolID larVolume 4
 # Example using a regular expression to match multiple volumes, extract an
@@ -42,6 +44,8 @@
 # all volume IDs from output), or uncomment the following line to keep the
 # volume IDs:
 #/g4simple/recordAllSteps
+
+/g4simple/verbose 2
 
 #set geometry
 /geometry/innerShroud/innerRadius 122.5 mm
@@ -90,14 +94,16 @@
 #/gps/direction 1 0 0
 #/gps/pos/centre 0 0 0
 
-/generator/SetRadiusMax 10 mm
+#rad min: only 0 taken by program, even if different in macro
+/generator/SetRadiusMax 700 mm
 /generator/SetRadiusMin 0 mm
 /generator/SetHeight 0 mm
 /generator/SetBinWidth 10 mm
 /generator/SetNParticles 5
 /generator/SetCenterVector 0.0 0.0 0.0 mm
-/generator/Set1D true
+/generator/Set1D false
 
-/write/filename herber.root
+/write/filename temp.root
+
 #/run/beamOn 10 NO SUCH STUFF HERE XXX
 

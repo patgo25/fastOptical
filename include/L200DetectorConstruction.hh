@@ -6,6 +6,7 @@
 #include "G4RotationMatrix.hh"
 #include "Randomize.hh"
 #include "globals.hh"
+#include "G4AssemblyVolume.hh"
 
 #include "L200DetectorMessenger.hh"
 
@@ -72,6 +73,9 @@ protected:
 	G4VPhysicalVolume* wslrTetraTexPhys;
 	G4VPhysicalVolume* wslrTPBPhys;
 
+	G4LogicalVolume* geDisc_log;	//all ge log here to easily add skin sörface to all
+	G4AssemblyVolume* geAssembly;	//all ge detectors in a single assembly, d'ted @ redo
+
 	//Materialien:
 	G4Material* world_mat;
 	G4Material* copper_mat;
@@ -80,6 +84,7 @@ protected:
 	G4Material* tetraTex_mat;
 	G4Material* steel_mat;
 	G4Material* TPB_mat;
+	G4Material* enrGe_mat;
 
 	//Optical properties
 	G4double LArAttVUV;
@@ -121,6 +126,15 @@ protected:
 	G4double wlsrTetraTexThickness;
 	G4double wslrHeight;
 
+	//For Ge detectors
+	G4double geDiscHeight;	//remember: full height!
+	G4double geDiscRad;
+	G4double geDiscGap;		//gap btw 2 ge discs, i.e. pitch = gap + height
+	G4double geArrayRad;	//radius of array (measured to axes of strings)				
+	G4int geDetectorsInString;	//nr of detectors in single string
+	G4int geStringCount;	//total number of strings 
+
+
 	//optical stuff
 	G4double lambdaE;
 	G4double lArAbsVUV;
@@ -140,6 +154,7 @@ protected:
 	void BuildWSLRTetra();
 	void BuildWSLRTPB();
 	//void BuildWSLRChimney();
+	void BuildGeDetectors();
 	void BuildOptics();
 
 
@@ -147,6 +162,9 @@ protected:
 	G4double LArRefIndex(G4double lambda);
 	G4double LArEpsilon(G4double lambda);
 	G4double LArRayLength(G4double lambda, G4double temp);
+
+	void sanityCheck();		//sanity check over geometrical parameters (e.g. ge array touches fibers)
+							//RunAbortion in case of error !!!
 };
 
 #endif

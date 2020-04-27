@@ -1,9 +1,13 @@
 /run/verbose 1
-/event/verbose  0
-/tracking/verbose 2
+/event/verbose  1
+/tracking/verbose 1
+
 
 /g4simple/setRandomSeed true
 #/random/setSeed 12345678
+
+#Need to set before Phyics List
+/optics/fiberDetProb 0.4
 
 # Need to set the physics list before we can do some of the other commands.
 /g4simple/setReferencePhysList Shielding
@@ -13,7 +17,7 @@
 /g4simple/setDetectorGDML L200 false
 
 # Set up output. Choose a format:
-/g4simple/setOutputFormat csv
+#/g4simple/setOutputFormat csv
 #/g4simple/setOutputFormat xml
 #/g4simple/setOutputFormat root
 #/g4simple/setOutputFormat hdf5
@@ -61,12 +65,12 @@
 /geometry/cryostat/wallThickness 10 mm
 
 #set optics
-/optics/lArAbsLength 20 cm
-/optics/visAbsLength 1000 m
+/optics/fiberAbsProb .2
+/optics/lArAbsLength 100 cm
+/optics/visAbsLength 10 m
 /optics/lArScintWL 128 nm
 /optics/tpbScintWL 450 nm
-/optics/fiberDetProb 0.4
-
+/optics/lArRayToggle false
 #update geometry & optics
 /update
 
@@ -95,7 +99,7 @@
 /generator/SetRadiusMin 0 mm
 /generator/SetHeight 0 mm
 /generator/SetBinWidth 10 mm
-/generator/SetNParticles 10
+/generator/SetNParticles 5
 /generator/SetCenterVector 0.0 0.0 0.0 mm
 /generator/Set1D false
 

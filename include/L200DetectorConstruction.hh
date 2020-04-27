@@ -80,6 +80,7 @@ protected:
 	G4Material* world_mat;
 	G4Material* copper_mat;
 	G4Material* lAr_mat;
+	G4Material* lAr_mat_fiber;
 	G4Material* tetraTex_mat;
 	G4Material* steel_mat;
 	G4Material* TPB_mat;

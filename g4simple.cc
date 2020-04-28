@@ -411,12 +411,18 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 			G4cout <<"Changing momentum dir from ";
 			G4cout << step->GetPreStepPoint()->GetMomentumDirection() << " to ";
 			G4cout << step->GetPostStepPoint()->GetMomentumDirection() << G4endl;
+
+			G4cout << "Yeees 128 nm photon absorbed with a probabiltity of " << fiberAbsProb << G4endl;
+			G4cout << "PreVoliume: " << step->GetPreStepPoint()->GetPhysicalVolume()->GetName() << G4endl;
+			G4cout << "PostVolium: " << step->GetPostStepPoint()->GetPhysicalVolume()->GetName() << G4endl;
 		}
+
+
 		//Here only roll for absorbtion since we already rolled in Boundary class for detection
-		if(p <= fiberAbsProb){
+		if(p <= fiberAbsProb && step->GetPostStepPoint()->GetPhysicalVolume() != step->GetPreStepPoint()->GetPhysicalVolume()){
+					mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+					step->GetTrack()->SetTrackStatus(fStopAndKill);
 			if(verbosity>3){G4cout << "Yeees 128 nm photon absorbed with a probabiltity of " << fiberAbsProb << G4endl;}
-			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
-			step->GetTrack()->SetTrackStatus(fStopAndKill);
 
 		}
 	    break;

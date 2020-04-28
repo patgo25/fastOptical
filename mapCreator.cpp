@@ -1,13 +1,14 @@
 /*
-* Root script, that takes raw counts-in-voxels data from L200 optical simulation and 
+* Root script, that takes raw counts-in-voxels data from L200 optical simulation and
 * creates fancy 2D histos and stuff.
 *
 *
 *
 */
 
-TH2D* getSegment(){
-	TTree* map = (TTree*) gFile->Get("map");
+TH2D* getSegment(const char* file){
+	TFile* theFile = new TFile(file);
+	TTree* map = (TTree*) theFile->Get("map");
 	//map->Show(0);
 
 	double xPos, yPos, zPos;
@@ -18,7 +19,7 @@ TH2D* getSegment(){
 	map->SetBranchAddress("zPos", &zPos);
 	map->SetBranchAddress("counts", &counts);
 	map->SetBranchAddress("initialNr", &initialNr);
-	
+
 	double xMin = 1e50, xMax = -1e50, yMin = 1e50, yMax = -1e50;
 	double xPitch = 1e50, yPitch = 1e50;
 
@@ -30,7 +31,7 @@ TH2D* getSegment(){
 		if(xPos < xMin) xMin = xPos;
 		if(yPos > yMax) yMax = yPos;
 		if(yPos < yMin) yMin = yPos;
-	}	
+	}
 
 	//search for points with minimum (but still non-zero) distance to leftmost point
 	// --> gives pitch (const distance btw 2 points)
@@ -42,7 +43,7 @@ TH2D* getSegment(){
 
 		if(xDiff > 1e-6 && xDiff < xPitch) xPitch = xDiff;
 		if(yDiff > 1e-6 && yDiff < yPitch) yPitch = yDiff;
-	}	
+	}
 
 	std::cout << xMin<<", "<<yMin<<", "<<xPitch<<", "<<yPitch<<std::endl;
 
@@ -55,8 +56,8 @@ TH2D* getSegment(){
 		map->GetEntry(i);
 
 		histo->SetBinContent(histo->FindBin(xPos,yPos),((double)counts)/initialNr);
-	}	
-	
+	}
+
 
 	return histo;
 }

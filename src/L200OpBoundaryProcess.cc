@@ -450,17 +450,38 @@ L200OpBoundaryProcess::PostStepDoIt(const G4Track& aTrack, const G4Step& aStep)
 		if(verboseLevel>0)G4cout << "Ok conditions are right Propose." << G4endl;
 		G4double secEnergy = lambda/(450*nm);
 
-		G4ThreeVector curdir = aTrack.GetMomentumDirection();
-		G4double cr = sqrt(curdir.getX()*curdir.getX() + curdir.getY()*curdir.getY());
-		G4double cphi = acos(curdir.getX()/cr);
+		//G4ThreeVector curdir = aTrack.GetMomentumDirection();
+		//G4double cr = sqrt(curdir.getX()*curdir.getX() + curdir.getY()*curdir.getY());
+		//G4double cphi = atan2(curdir.getY(),curdir.getX());
+	  	//G4double phi = cphi + pi + pi*(G4UniformRand()-0.5);
+		//G4cout << "Rotatate " << cphi*(180/pi) << " by " << (cphi-phi)*(180/pi) << " to " << phi*(180/pi) << G4endl;
+	  	//G4double theta = G4UniformRand()*pi;
+		//G4double pz = cos(theta);
+	  	//G4double px = cos(phi)*sin(theta);
+	  	//G4double py = sin(phi)*sin(theta);
 
-	  	G4double phi = cphi + pi + pi*(G4UniformRand()-0.5);
-	  	G4double pz = G4UniformRand();
-	  	G4double px = cos(phi);
-	  	G4double py = sin(phi);
+		//Mueller 1959, Marsaglia 1972
+		//G4double px = G4RandGauss::shoot(0,1);
+		//G4double py = G4RandGauss::shoot(0,1);
+		//G4double pz = G4RandGauss::shoot(0,1);
+	   	//G4ThreeVector newDir = G4ThreeVector(px,py,pz);
+	    	//newDir = newDir.unit();
 
+		//Marsaglia 1972 paper says for 3 dim is faster than Muller method
+		//Efficiency: pi/6
+		G4double px;
+		G4double py;
+		G4double pz;
+		do{
+		px = G4UniformRand()*2.0 -1;
+		py =  G4UniformRand()*2.0 -1;
+		pz =  G4UniformRand()*2.0 -1;
+		}
+		while(px*px + py*py + pz*pz >= 1);
 	   	G4ThreeVector newDir = G4ThreeVector(px,py,pz);
 	    	newDir = newDir.unit();
+
+
 	        aParticleChange.ProposeMomentumDirection(newDir);
 	    	aParticleChange.ProposeEnergy(secEnergy);
 

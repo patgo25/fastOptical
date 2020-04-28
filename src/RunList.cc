@@ -88,7 +88,7 @@ void RunList::writeRun(G4int nrPrimaries){
 	voxelX = voxel.xPos + 0.5*voxel.xWid;
 	voxelY = voxel.yPos + 0.5*voxel.yWid;
 	voxelZ = voxel.zPos + 0.5*voxel.zWid;
-	count = mra->getCount(1);	//should now have only cnts in volumes with ID 1 (check macro!!!)
+	count = (generator->isCurrentVoxelAborted()) ? 0 : mra->getCount(1);	//should now have only cnts in volumes with ID 1 (check macro!!!)
 	initialNr = nrPrimaries;
 
 	analysis->FillNtupleDColumn(0, voxelX);		//dont mess up ordering!

@@ -45,7 +45,7 @@
 #/g4simple/recordAllSteps
 
 /g4simple/verbose 2
-/generator/verbose 0
+/generator/verbose 5
 
 #set geometry
 /geometry/innerShroud/innerRadius 122.5 mm
@@ -99,9 +99,11 @@
 /generator/SetRadiusMin 0 mm
 /generator/SetHeight 0 mm
 /generator/SetBinWidth 10 mm
-/generator/SetNParticles 5
+/generator/SetNParticles 10000
 /generator/SetCenterVector 0.0 0.0 0.0 mm
 /generator/Set1D false
+#should a voxel be aborted (and counted as zero) upon a single non-lar primary?
+/generator/abortOnNonlar true
 
 /write/filename temp.root
 

@@ -37,6 +37,7 @@ private:
   G4UIcmdWithADouble* fLiquidArgonSetNParticles;
   G4UIcmdWithABool* fLiquidArgonSet1D;
   G4UIcmdWithAnInteger* fSetVerboseCmd;
+  G4UIcmdWithABool* fAbortNonlarCmd;
 
 };
 #endif

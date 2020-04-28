@@ -62,18 +62,27 @@ L200ParticleGeneratorMessenger::L200ParticleGeneratorMessenger(L200ParticleGener
 
   fSetVerboseCmd = new G4UIcmdWithAnInteger("/generator/verbose",this);
   fSetVerboseCmd->SetGuidance("Sets verbosity of generator.");
+
+  fAbortNonlarCmd = new G4UIcmdWithABool("/generator/abortOnNonlar",this);
+  fAbortNonlarCmd->SetGuidance("true: aborts voxel on single non-LAr hit");
 }
 
 
 L200ParticleGeneratorMessenger::~L200ParticleGeneratorMessenger()
 {
-  delete fLiquidArgonDirectory;
+  
   delete fLiquidArgonSetRadius;
   delete fLiquidArgonSetRadiusMin;
   delete fLiquidArgonSetHeight;
   delete fLiquidArgonSetCenterVector;
   delete fLiquidArgonSetBinWidth;
   delete fLiquidArgonSetNParticles;
+  delete fLiquidArgonSet1D;
+  delete fSetVerboseCmd;
+  delete fAbortNonlarCmd;
+
+
+  delete fLiquidArgonDirectory;		//dir is last
 }
 
 void L200ParticleGeneratorMessenger::SetNewValue(G4UIcommand *cmd, G4String str)
@@ -100,5 +109,35 @@ void L200ParticleGeneratorMessenger::SetNewValue(G4UIcommand *cmd, G4String str)
     fLiquidArgonGenerator->is1DScan(fLiquidArgonSet1D->GetNewBoolValue(str));
   }else if(cmd == fSetVerboseCmd){
 		fLiquidArgonGenerator->setVerbosity(fSetVerboseCmd->GetNewIntValue(str));
-	  }
+	  }else if (cmd = fAbortNonlarCmd){
+		fLiquidArgonGenerator->setAbortOnNonlar(fAbortNonlarCmd->GetNewBoolValue(str));
+	}
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -49,6 +49,7 @@ class L200ParticleGenerator
     void SetNParticles(G4double N) {fNParticles = N;}
     void is1DScan(G4bool b){fis1D =b;}
 	void setVerbosity(G4int verbose){verbosity = verbose;};
+	void setAbortOnNonlar(G4bool flag){abortOnNonlar = flag;};
 
 	//methods called from above (RunList)
 	//to be called BEFORE STARTING ANY RUN!!!
@@ -57,6 +58,7 @@ class L200ParticleGenerator
 							// return 0 --> end runs
 
 	Voxel getCurrentVoxel() {return currentVoxel;};
+	G4bool isCurrentVoxelAborted(){return abortVoxel;};
 
   private:
     static const G4double LambdaE;
@@ -80,9 +82,14 @@ class L200ParticleGenerator
     G4double fEnergy = 0;
     G4bool fis1D = true;
     G4double fLArWL;
+	G4bool abortOnNonlar;		//if a single non-LAr hit should abort the whole voxel
+
     L200ParticleGeneratorMessenger* fMessenger;
 
 	Voxel currentVoxel;
+	G4bool larFailed;		//set in PositionDecider when no proper LAr position found
+	G4bool abortVoxel;		//set in Generate... @ hit of nonLar, read in Generate... & from RunList,
+							//reset in nextVoxel
 
 	uint32_t flatVoxelIndex;	//flat index for current voxel (defines both x and y index if needed)
 

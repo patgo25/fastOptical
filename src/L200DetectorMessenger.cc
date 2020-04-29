@@ -92,6 +92,10 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 	lArIsRayCmd->SetDefaultValue(false);
 	lArIsRayCmd->SetGuidance("Set if Ray Scattering can occur in LAr");
 
+	setBlackWLSRCmd = new G4UIcmdWithABool("/optics/setBlackWLSR", this);
+	setBlackWLSRCmd->SetDefaultValue(false);
+	setBlackWLSRCmd->SetGuidance("true-> make the TPB on the WLSR black");
+
 
 }
 
@@ -192,6 +196,10 @@ void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
 	if(command == lArIsRayCmd){
 		det->setlArRay(lArIsRayCmd->GetNewBoolValue(value));
 	}
+	if(command == setBlackWLSRCmd){
+		det->setBlackWLSR(setBlackWLSRCmd->GetNewBoolValue(value));
+	}
+	
 
 
 

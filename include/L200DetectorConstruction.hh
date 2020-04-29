@@ -62,6 +62,7 @@ public:
 	void setlArWL(G4double value){lArWL = value;}
 	void settpbWL(G4double value){tpbWL = value;}
 	void setlArRay(G4bool value){lArRay = value;}
+	void setBlackWLSR(G4bool flag){wlsrBlack = flag;};
 
 protected:
 	G4VPhysicalVolume* worldPhys;
@@ -85,6 +86,7 @@ protected:
 	G4Material* steel_mat;
 	G4Material* TPB_mat;
 	G4Material* enrGe_mat;
+	G4Material* black_mat;	//optically absorbing; can be used instead of e.g. tpb to simulate black
 
 	//Optical properties
 	G4double LArAttVUV;
@@ -143,6 +145,8 @@ protected:
 	G4double tpbWL;
 	G4double deltaE;	//half width of emission / absorption peaks
 	G4bool lArRay;
+
+	G4bool wlsrBlack;		//true -> use black_mat for TPB (instead of TPB_mat); default: false
 	//Messenger
 	L200DetectorMessenger* det_briefTaube;
 

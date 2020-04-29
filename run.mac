@@ -44,8 +44,8 @@
 # volume IDs:
 #/g4simple/recordAllSteps
 
-/g4simple/verbose 2
-/generator/verbose 5
+/g4simple/verbose 0
+/generator/verbose 0
 
 #set geometry
 /geometry/innerShroud/innerRadius 122.5 mm
@@ -71,6 +71,7 @@
 /optics/lArScintWL 128 nm
 /optics/tpbScintWL 450 nm
 /optics/lArRayToggle false
+/optics/setBlackWLSR false
 #update geometry & optics
 /update
 

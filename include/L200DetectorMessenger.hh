@@ -44,6 +44,8 @@ private:
 	G4UIcmdWithADoubleAndUnit* lArScintWLCmd;
 	G4UIcmdWithADoubleAndUnit* tpbScintWLCmd;
 	G4UIcmdWithABool*	   lArIsRayCmd;
+	G4UIcmdWithABool*	   setBlackWLSRCmd;
+
 	G4UIcmdWithoutParameter*   updateCmd;
 };
 #endif

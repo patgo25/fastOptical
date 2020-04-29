@@ -101,11 +101,12 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 
 L200DetectorMessenger::~L200DetectorMessenger(){
 
-	delete geomDir;
+	
 	delete geomInnerShroudDir;
 	delete geomOuterShroudDir;
 	delete geomWLSRDir;
-	delete opticsDir;
+
+	delete geomDir;		//delete directory after contents
 
 	delete innerShroudInnerRadiusCmd;
 	delete innerShroudOuterRadiusCmd;
@@ -125,6 +126,8 @@ L200DetectorMessenger::~L200DetectorMessenger(){
 	delete tpbScintWLCmd;
 	delete updateCmd;
 	delete lArIsRayCmd;
+
+	delete opticsDir;
 }
 
 void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){

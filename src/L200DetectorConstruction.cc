@@ -266,7 +266,7 @@ void L200DetectorConstruction::InitializeMaterials(){
 	mptLArFiber->AddProperty("ABSLENGTH",photonEnergy,lArAbsorption,NUM);
 
 	lAr_mat_fiber->SetMaterialPropertiesTable(mptLAr);
-	
+
 	// enriched germanium
   	density = 5.56*g/cm3;//cryogenic temperature (at room temperature: 5.54*g/cm3)
   	enrGe_mat = new G4Material(name="EnrichedGe", density, 1);
@@ -572,14 +572,14 @@ void L200DetectorConstruction::BuildWSLRTPB(){
 void L200DetectorConstruction::BuildGeDetectors(){
 	G4Tubs* geDisc_tub = new G4Tubs("Ge_detector",0,geDiscRad,geDiscHeight/2.,0,2*M_PI);
 	/*G4LogicalVolume* */geDisc_log = new G4LogicalVolume(geDisc_tub,enrGe_mat,"Ge_detector");
-	
+
 	G4double stringFullHeight = geDetectorsInString*geDiscHeight+(geDetectorsInString-1)*geDiscGap;
 
 	//using again the assembly to create a nice pattern
 	delete geAssembly;	//delete old one to prevent leak; deleting NULL is unproblematic
 	/*G4AssemblyVolume* */geAssembly = new G4AssemblyVolume();
 	//location of disc within assembly:
-	G4RotationMatrix Ra(0.,0.,0.); G4ThreeVector radialVect; 
+	G4RotationMatrix Ra(0.,0.,0.); G4ThreeVector radialVect;
 	//location of assembly in LAr:
 	G4RotationMatrix Rm = G4RotationMatrix(0.,0.,0.); G4ThreeVector Tm = G4ThreeVector(0.,0.,0.);
 
@@ -593,7 +593,7 @@ void L200DetectorConstruction::BuildGeDetectors(){
 	}
 
 	geAssembly->MakeImprint(lArPhys->GetLogicalVolume(), Tm, &Rm);
-	
+
 }
 
 
@@ -685,9 +685,9 @@ void L200DetectorConstruction::BuildOptics()
 	new G4LogicalBorderSurface("OuterFiber_TO_LAr",fiberShroudOuterPhys,lArPhys,sfOutOuter);
 
 	//ge optical surface (only inward; light coming out of Ge should be rare...)
-	//taken from MaGe: /legendgeometry/src/LGND_200_OpticalSurfaces.cc | 275 ("LArToGe")	
+	//taken from MaGe: /legendgeometry/src/LGND_200_OpticalSurfaces.cc | 275 ("LArToGe")
 	// and materials/src/MGLGNDOpticalMaterialProperties.cc
-	//reflectivity from generators/data/Reflectivity_Ge.dat (copied to data folder)	
+	//reflectivity from generators/data/Reflectivity_Ge.dat (copied to data folder)
 	{		//using nice empty scope to prevent local name clash
 	G4OpticalSurface* sfGe = new G4OpticalSurface("LArToGe",unified,groundfrontpainted,dielectric_metal,0.5);	//last val: smoothness
 	G4double reflectivity[NUM] = {0.3563,0.6500};//keep in mind: optical (450nm), VUV
@@ -702,7 +702,7 @@ void L200DetectorConstruction::BuildOptics()
 	sfGe->SetMaterialPropertiesTable(mpt);
 	new G4LogicalSkinSurface("Ge_Surface",geDisc_log,sfGe);
 	}
-	
+
 
 	//Give LAr volume a refractive skin
 	//G4double lArRefIndex[NUM]={LArRefIndex(tpbWL),LArRefIndex(lArWL)};
@@ -712,9 +712,6 @@ void L200DetectorConstruction::BuildOptics()
 	G4OpticalSurface* sfLAr = new G4OpticalSurface("LAr_Surface",unified,groundfrontpainted, dielectric_dielectric);
 	sfLAr->SetMaterialPropertiesTable(mptLAr);
 	new G4LogicalSkinSurface("LAr_Surface",lArPhys->GetLogicalVolume(),sfLAr);
-
-	
-
 
 
 }
@@ -785,16 +782,16 @@ void L200DetectorConstruction::sanityCheck(){
 		G4Exception("L200DetectorConstruction::sanityCheck","stringsTooLong",FatalException,"ge detector strings exceed cryo height");
 	}
 	if(geArrayRad - geDiscRad <= innerShroudOuterR){
-		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchInnerShroud",FatalException,"ge detector strings touch inner fiber shroud");	
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchInnerShroud",FatalException,"ge detector strings touch inner fiber shroud");
 	}
 	if(geArrayRad + geDiscRad >= outerShroudInnerR){
-		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",FatalException,"ge detector strings touch outer fiber shroud");	
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringTouchOuterShroud",FatalException,"ge detector strings touch outer fiber shroud");
 	}
 	if(geArrayRad*2*M_PI <= geDiscRad*2 * geStringCount ){
-		G4Exception("L200DetectorConstruction::sanityCheck", "stringsTouchEachOther",FatalException,"ge detector strings too crowded & touch each other");	
+		G4Exception("L200DetectorConstruction::sanityCheck", "stringsTouchEachOther",FatalException,"ge detector strings too crowded & touch each other");
 	}
 	//TODO further checks
-	
+
 	//std::cout <<geArrayRad*2*M_PI <<" "<< <<" -> "<<geDiscRad*2 * geDetectorsInString<<std::endl;
 
 	G4cout << "Sanity check finished successful." << G4endl;

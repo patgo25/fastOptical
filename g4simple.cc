@@ -612,7 +612,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 	G4double curZdir = step->GetPostStepPoint()->GetMomentumDirection().z();
 	G4double curZ = step->GetPostStepPoint()->GetPosition().z() + fiberLengthHalf;
 	G4double x=curZ;
-	if(curZdir >= 0)
+
+	if(G4UniformRand()<=0.5)
 		x= 2.*fiberLengthHalf-curZ;
 	G4double intensity =I2*exp(-x/attL) + (I3 - I2)*exp(-x/attS);
 

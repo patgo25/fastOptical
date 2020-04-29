@@ -45,24 +45,32 @@ public:
     	void UpdateGeometry();
 
     	//Messenger functions
-    	void setinnerShroudInnerR(G4double value){innerShroudInnerR = value;}
-	void setinnerShroudOuterR(G4double value){innerShroudOuterR = value;}
-	void setouterShroudInnerR(G4double value){outerShroudInnerR = value;}
-	void setouterShroudOuterR(G4double value){outerShroudOuterR = value;}
-	void setwlsrRadius(G4double value){wlsrRadius = value;}
-	void setinnerShroudHeight(G4double value){innerShroudHeight = value;}
-	void setouterShroudHeight(G4double value){outerShroudHeight = value;}
-	void setwlsrHeight(G4double value){wslrHeight = value;}
-	void setwlsrTPBThickness(G4double value){wslrTPBThickness = value;}
-	void setwlsrCuThickness(G4double value){wlsrCuThickness = value;}
-	void setwlsrTetraTexThickness(G4double value){wlsrTetraTexThickness = value;}
-	void setcryostatWallThickness(G4double value){wallthickness = value;}
-	void setlArAbsVUV(G4double value){lArAbsVUV = value;}
-	void setlArAbsVis(G4double value){lArAbsVis = value;}
-	void setlArWL(G4double value){lArWL = value;}
-	void settpbWL(G4double value){tpbWL = value;}
-	void setlArRay(G4bool value){lArRay = value;}
+    	void setinnerShroudInnerR(G4double value){innerShroudInnerR = value;};
+	void setinnerShroudOuterR(G4double value){innerShroudOuterR = value;};
+	void setouterShroudInnerR(G4double value){outerShroudInnerR = value;};
+	void setouterShroudOuterR(G4double value){outerShroudOuterR = value;};
+	void setwlsrRadius(G4double value){wlsrRadius = value;};
+	void setinnerShroudHeight(G4double value){innerShroudHeight = value;};
+	void setouterShroudHeight(G4double value){outerShroudHeight = value;};
+	void setwlsrHeight(G4double value){wslrHeight = value;};
+	void setwlsrTPBThickness(G4double value){wslrTPBThickness = value;};
+	void setwlsrCuThickness(G4double value){wlsrCuThickness = value;};
+	void setwlsrTetraTexThickness(G4double value){wlsrTetraTexThickness = value;};
+	void setcryostatWallThickness(G4double value){wallthickness = value;};
+	void setlArAbsVUV(G4double value){lArAbsVUV = value;};
+	void setlArAbsVis(G4double value){lArAbsVis = value;};
+	void setlArWL(G4double value){lArWL = value;};
+	void settpbWL(G4double value){tpbWL = value;};
+	void setlArRay(G4bool value){lArRay = value;};
 	void setBlackWLSR(G4bool flag){wlsrBlack = flag;};
+
+	void setGeDiscHeight(G4double val){geDiscHeight = val;};
+	void setGeDiscRad(G4double val){geDiscRad = val;};
+	void setGeDiscGap(G4double val){geDiscGap = val;};
+	void setGeArrayRad(G4double val){geArrayRad = val;};
+	void setNrGeDetPerString(G4int val){geDetectorsInString = val;};
+	void setNrGeStrings(G4int val){geStringCount = val;};
+
 
 protected:
 	G4VPhysicalVolume* worldPhys;

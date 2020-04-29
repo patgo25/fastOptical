@@ -64,6 +64,13 @@
 
 /geometry/cryostat/wallThickness 10 mm
 
+/geometry/Ge/discHeight 100 mm
+/geometry/Ge/discRadius 40 mm
+/geometry/Ge/discGap 50 mm
+/geometry/Ge/arrayRadius 200 mm
+/geometry/Ge/discPerString 12
+/geometry/Ge/nrStrings 14
+
 #set optics
 /optics/fiberAbsProb .2
 /optics/lArAbsLength 100 cm
@@ -100,7 +107,7 @@
 /generator/SetRadiusMin 0 mm
 /generator/SetHeight 0 mm
 /generator/SetBinWidth 10 mm
-/generator/SetNParticles 10000
+/generator/SetNParticles 100
 /generator/SetCenterVector 0.0 0.0 0.0 mm
 /generator/Set1D false
 #should a voxel be aborted (and counted as zero) upon a single non-lar primary?

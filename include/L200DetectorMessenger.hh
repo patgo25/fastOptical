@@ -32,15 +32,20 @@ private:
 
 	G4UIcmdWithADoubleAndUnit* innerShroudInnerRadiusCmd;
 	G4UIcmdWithADoubleAndUnit* innerShroudOuterRadiusCmd;
+	G4UIcmdWithADoubleAndUnit* innerShroudHeightCmd;
+	G4UIcmdWithADoubleAndUnit* innerShroudZOffsetCmd;
+
 	G4UIcmdWithADoubleAndUnit* outerShroudInnerRadiusCmd;
 	G4UIcmdWithADoubleAndUnit* outerShroudOuterRadiusCmd;
-	G4UIcmdWithADoubleAndUnit* wlsrRadiusCmd;
-	G4UIcmdWithADoubleAndUnit* innerShroudHeightCmd;
 	G4UIcmdWithADoubleAndUnit* outerShroudHeightCmd;
+	G4UIcmdWithADoubleAndUnit* outerShroudZOffsetCmd;
+
+	G4UIcmdWithADoubleAndUnit* wlsrRadiusCmd;
 	G4UIcmdWithADoubleAndUnit* wlsrHeightCmd;
 	G4UIcmdWithADoubleAndUnit* wlsrTPBThicknessCmd;
 	G4UIcmdWithADoubleAndUnit* wlsrCuThicknessCmd;
 	G4UIcmdWithADoubleAndUnit* wlsrTetraTexThicknessCmd;
+
 	G4UIcmdWithADoubleAndUnit* cryostatWallThicknessCmd;
 
 	G4UIcmdWithADoubleAndUnit* setGeDiscHeightCmd;

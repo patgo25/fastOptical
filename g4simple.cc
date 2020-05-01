@@ -629,16 +629,40 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 };		//END of Stepping Action Class Definition/Declaration
 
 
-class G4SimplePrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
+class G4SimplePrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction, public G4UImessenger
 {
   public:
-    G4SimplePrimaryGeneratorAction(){gen = new L200ParticleGenerator;}
-    ~G4SimplePrimaryGeneratorAction(){delete gen;}
-    void GeneratePrimaries(G4Event* event) { gen->GeneratePrimaryVertex(event); }
-	L200ParticleGenerator* getGenerator() {return gen;};
+    G4SimplePrimaryGeneratorAction(){
+      gen = new L200ParticleGenerator;
+
+      fToggleGeneratorCmd = new G4UIcmdWithABool("/g4simple/toggleL200Gen", this);
+      fToggleGeneratorCmd->SetDefaultValue(true);
+      fToggleGeneratorCmd->SetGuidance("Set if the L200ParticleGenerator is used (if so, no beamOn command, and g4simple is started with two options only)");
+      useGen = true;
+    }
+    ~G4SimplePrimaryGeneratorAction(){
+      delete gen;
+      delete fToggleGeneratorCmd;
+    }
+    void GeneratePrimaries(G4Event* event) {
+	if(useGen)gen->GeneratePrimaryVertex(event);
+	else fParticleGun.GeneratePrimaryVertex(event);
+    }
+    L200ParticleGenerator* getGenerator() {
+	return gen;
+    };
+   void setNewValue(G4UIcommand *command, G4String newValues) {
+
+
+     if(command == fToggleGeneratorCmd) {
+        useGen = fToggleGeneratorCmd->GetNewBoolValue(newValues);
+     }
+  };
   private:
-    //G4GeneralParticleSource fParticleGun;
+    G4GeneralParticleSource fParticleGun;
     L200ParticleGenerator* gen;
+    G4UIcmdWithABool* fToggleGeneratorCmd;
+    G4bool useGen;
 };
 
 
@@ -826,10 +850,13 @@ class G4SimpleRunManager : public G4RunManager, public G4UImessenger
 
 int main(int argc, char** argv)
 {
-  if(argc > 2) {
-    cout << "Usage: " << argv[0] << " [macro]" << endl;
+  if(argc > 3) {
+    cout << "Usage: " << argv[0] << " [macro]" << "[--vis]" << endl;
     return 1;
   }
+
+
+
 
   G4SimpleRunManager* runManager = new G4SimpleRunManager;
   G4VisManager* visManager = new G4VisExecutive;
@@ -838,6 +865,7 @@ int main(int argc, char** argv)
   if(argc == 1) (new G4UIterminal(new G4UItcsh))->SessionStart();
   else G4UImanager::GetUIpointer()->ApplyCommand(G4String("/control/execute ")+argv[1]);
 
+  if(argc == 2)
 	runManager->autorun();
 
 #ifdef GDMLOUT

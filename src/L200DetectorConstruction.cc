@@ -105,10 +105,12 @@ void L200DetectorConstruction::InitializeDimensions(){
 	innerShroudOuterR = 134.5*mm;
 	innerShroudInnerR = 122.5*mm;
 	innerShroudHeight = 1300*mm;
+	innerShroudZOffset= 0*mm;
 
 	outerShroudOuterR = 295*mm;
 	outerShroudInnerR = 283*mm;
 	outerShroudHeight = 1500*mm;
+	outerShroudZOffset= 200*mm;
 
 	//WSLR values
 	wlsrRadius = 700*mm;
@@ -125,6 +127,7 @@ void L200DetectorConstruction::InitializeDimensions(){
 	geArrayRad = 200*mm;			//TODO finalize at some point
 	geDetectorsInString = 7;		//should be 7*10cm+6*5cm = 1m total
 	geStringCount = 14;				//defines the symmetry angle: 360/(14*2) ~ 12.8°
+//	geStringZOffset=0*mm;
 
 	//LAr optical
 	lArAbsVUV = 20*cm;
@@ -275,7 +278,7 @@ void L200DetectorConstruction::InitializeMaterials(){
   	enrGe_mat = new G4Material(name="EnrichedGe", density, 1);
   	enrGe_mat->AddElement(elGeEnr,natoms=1);
 
-	
+
 	//black stuff
 	//TODO: change composition? RINDEX???
 	black_mat = new G4Material(name="black",
@@ -498,7 +501,7 @@ void L200DetectorConstruction::BuildInnerShroud(){
 						     this->lAr_mat_fiber,
 						     "innerShroud");
 	this->fiberShroudInnerPhys = new G4PVPlacement(0,
-						G4ThreeVector(0.,0.,0.),
+						G4ThreeVector(0.,0.,innerShroudZOffset),
 						isLog,
 						"innerShroud",
 						this->lArPhys->GetLogicalVolume(),0,0);
@@ -516,7 +519,7 @@ void L200DetectorConstruction::BuildOuterShroud(){
 						     this->lAr_mat_fiber,
 						     "outerShroud");
 	this->fiberShroudOuterPhys = new G4PVPlacement(0,
-						     G4ThreeVector(0.,0.,0.),
+						     G4ThreeVector(0.,0.,outerShroudZOffset),
 						     osLog,
 						     "outerShroud",
 						      this->lArPhys->GetLogicalVolume(),0,0);

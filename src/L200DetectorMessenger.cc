@@ -117,6 +117,16 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 	setBlackWLSRCmd->SetDefaultValue(false);
 	setBlackWLSRCmd->SetGuidance("true-> make the TPB on the WLSR black");
 
+	innerShroudZOffsetCmd = new G4UIcmdWithADoubleAndUnit("/geometry/innerShroud/zOffset", this);
+	innerShroudZOffsetCmd->SetDefaultValue(200.0*mm);
+	innerShroudZOffsetCmd->SetGuidance("Set the z offset of the inner fiber shroud");
+
+	outerShroudZOffsetCmd = new G4UIcmdWithADoubleAndUnit("/geometry/outerShroud/zOffset", this);
+	outerShroudZOffsetCmd->SetDefaultValue(100.0*mm);
+	outerShroudZOffsetCmd->SetGuidance("Set the z offset of the outer fiber shroud");
+
+
+
 
 }
 
@@ -140,6 +150,8 @@ L200DetectorMessenger::~L200DetectorMessenger(){
 	delete tpbScintWLCmd;
 	delete updateCmd;
 	delete lArIsRayCmd;
+	delete innerShroudZOffsetCmd;
+	delete outerShroudZOffsetCmd;
 
 	delete geomInnerShroudDir;
 	delete geomOuterShroudDir;
@@ -154,89 +166,100 @@ void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
 	if(command == innerShroudInnerRadiusCmd){
 		det->setinnerShroudInnerR(innerShroudInnerRadiusCmd->GetNewDoubleValue(value));
 	}
-	if(command == innerShroudOuterRadiusCmd){
+	else if(command == innerShroudOuterRadiusCmd){
 		det->setinnerShroudOuterR(innerShroudOuterRadiusCmd->GetNewDoubleValue(value));
 	}
-	if(command == outerShroudInnerRadiusCmd){
+	else if(command == outerShroudInnerRadiusCmd){
 		det->setouterShroudInnerR(outerShroudInnerRadiusCmd->GetNewDoubleValue(value));
 	}
-	if(command == outerShroudOuterRadiusCmd){
+	else if(command == outerShroudOuterRadiusCmd){
 		det->setouterShroudOuterR(outerShroudOuterRadiusCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == wlsrRadiusCmd){
+	else if(command == wlsrRadiusCmd){
 		det->setwlsrRadius(wlsrRadiusCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == innerShroudHeightCmd){
+	else if(command == innerShroudHeightCmd){
 		det->setinnerShroudHeight(innerShroudHeightCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == outerShroudHeightCmd){
+	else if(command == outerShroudHeightCmd){
 	 	det->setouterShroudHeight(outerShroudHeightCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == wlsrHeightCmd){
+	else if(command == wlsrHeightCmd){
 		det->setwlsrHeight(wlsrHeightCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == wlsrTPBThicknessCmd){
+	else if(command == wlsrTPBThicknessCmd){
 		det->setwlsrTPBThickness(wlsrTPBThicknessCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == wlsrCuThicknessCmd){
+	else if(command == wlsrCuThicknessCmd){
 		det->setwlsrCuThickness(wlsrCuThicknessCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == wlsrTetraTexThicknessCmd){
+	else if(command == wlsrTetraTexThicknessCmd){
 		det->setwlsrTetraTexThickness(wlsrTetraTexThicknessCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == cryostatWallThicknessCmd){
+	else if(command == cryostatWallThicknessCmd){
 		det->setcryostatWallThickness(cryostatWallThicknessCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == setGeDiscHeightCmd){
+	else if(command == setGeDiscHeightCmd){
 		det->setGeDiscHeight(setGeDiscHeightCmd->GetNewDoubleValue(value));
-	}else if(command == setGeDiscRadCmd){
+	}
+	else if(command == setGeDiscRadCmd){
 		det->setGeDiscRad(setGeDiscRadCmd->GetNewDoubleValue(value));
-	}else if(command == setGeDiscGapCmd){
+	}
+	else if(command == setGeDiscGapCmd){
 		det->setGeDiscGap(setGeDiscGapCmd->GetNewDoubleValue(value));
-	}else if(command == setGeArrayRadCmd){
+	}
+	else if(command == setGeArrayRadCmd){
 		det->setGeArrayRad(setGeArrayRadCmd->GetNewDoubleValue(value));
-	}else if(command == setNrGeDetPerStringCmd){
+	}
+	else if(command == setNrGeDetPerStringCmd){
 		det->setNrGeDetPerString(setNrGeDetPerStringCmd->GetNewIntValue(value));
-	}else if(command == setNrGeStringsCmd){
+	}
+	else if(command == setNrGeStringsCmd){
 		det->setNrGeStrings(setNrGeStringsCmd->GetNewIntValue(value));
 	}
 
-	if(command == lArAbsLengthCmd){
+	else if(command == lArAbsLengthCmd){
 		det->setlArAbsVUV(lArAbsLengthCmd->GetNewDoubleValue(value));
 
 	}
 
-	if(command == visAbsLengthCmd){
+	else if(command == visAbsLengthCmd){
 		det->setlArAbsVis(visAbsLengthCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == lArScintWLCmd){
+	else if(command == lArScintWLCmd){
 		det->setlArWL(lArScintWLCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == tpbScintWLCmd){
+	else if(command == tpbScintWLCmd){
 		det->settpbWL(tpbScintWLCmd->GetNewDoubleValue(value));
 
 	}
-	if(command == updateCmd){
+	else if(command == updateCmd){
 		det->UpdateGeometry();
 	}
-	if(command == lArIsRayCmd){
+	else if(command == lArIsRayCmd){
 		det->setlArRay(lArIsRayCmd->GetNewBoolValue(value));
 	}
-	if(command == setBlackWLSRCmd){
+	else if(command == setBlackWLSRCmd){
 		det->setBlackWLSR(setBlackWLSRCmd->GetNewBoolValue(value));
 	}
-	
+	else if(command == innerShroudZOffsetCmd){
+		det->setinnerShroudZOffset(innerShroudZOffsetCmd->GetNewDoubleValue(value));
+	}
+	else if(command == outerShroudZOffsetCmd){
+		det->setouterShroudZOffset(outerShroudZOffsetCmd->GetNewDoubleValue(value));
+	}
+
 
 
 

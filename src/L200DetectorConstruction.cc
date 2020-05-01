@@ -66,6 +66,9 @@ L200DetectorConstruction::L200DetectorConstruction()
 	tetraTex_mat		= NULL;
 	TPB_mat			= NULL;
 	enrGe_mat = NULL;
+	black_mat = NULL;
+
+	wlsrBlack = false;
 
 	InitializeDimensions();
 	InitializeRotations();
@@ -236,7 +239,7 @@ void L200DetectorConstruction::InitializeMaterials(){
 	G4double tpbQuantumEff = 1.2;
 	G4double tpbTimeConst = 0.01*ns;
 	G4double tpbRefIndex[NUM_lines] = {1.635,1.635,1.635,1.635,1.635,1.635};
-	G4double tpbEmission[NUM_lines] = {0., 0., 0., 0., 1., 0.};//{lambdaE/tpbWL,lambdaE/tpbWL};
+	G4double tpbEmission[NUM_lines] = {0., 0., 0., 0., 1., 0.};
 	G4double tpbAbsorption[NUM_lines] = {1*nm, 1*nm, 1*nm, 1000*m, 1000*m, 1000*m};
 //{1000*m, 1000*m, 10*nm, 1*nm, 1*nm, 1*nm};
 	G4MaterialPropertiesTable* tbpMPT = new G4MaterialPropertiesTable();
@@ -272,6 +275,21 @@ void L200DetectorConstruction::InitializeMaterials(){
   	enrGe_mat = new G4Material(name="EnrichedGe", density, 1);
   	enrGe_mat->AddElement(elGeEnr,natoms=1);
 
+	
+	//black stuff
+	//TODO: change composition? RINDEX???
+	black_mat = new G4Material(name="black",
+				 density=1.08*g/cm3,
+				 ncomponents=2);
+	black_mat->AddElement(elC,22);
+	black_mat->AddElement(elH,28);		//like TPB for now
+	//optical black
+	G4double blackRefIndex[NUM] = {1.635,1.635};
+	G4double blackAbsorption[NUM_lines] = {0.001*nm, 0.001*nm};
+	G4MaterialPropertiesTable* blackMPT = new G4MaterialPropertiesTable();
+	blackMPT->AddProperty("RINDEX",photonEnergy,blackRefIndex,NUM);
+	blackMPT->AddProperty("ABSLENGTH",photonEnergy, blackAbsorption,NUM);
+	black_mat->SetMaterialPropertiesTable(blackMPT);
 
 	//World
 	world_mat = nist->FindOrBuildMaterial("G4_AIR");
@@ -548,6 +566,10 @@ void L200DetectorConstruction::BuildWSLRTetra(){
 
 //The WSLR TPB
 void L200DetectorConstruction::BuildWSLRTPB(){
+
+	//choose here btw black or "normal" TPB öptics
+	G4Material* TPB_use_mat = wlsrBlack ? black_mat : TPB_mat;
+
 	G4Tubs* wslrTPBT = new G4Tubs("wslrTPB",
 				 wslrTetraTexInnerR-wslrTPBThickness,
 				 wslrTetraTexInnerR,
@@ -555,7 +577,7 @@ void L200DetectorConstruction::BuildWSLRTPB(){
 				 0,
 				 2*M_PI);
 	G4LogicalVolume* wslrTPBLog = new G4LogicalVolume(wslrTPBT,
-						     this->TPB_mat,
+						     TPB_use_mat,
 						     "wslrTPB");
 	this->wslrTPBPhys = new G4PVPlacement(0,
 					   G4ThreeVector(0.,0.,0.),

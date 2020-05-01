@@ -13,10 +13,13 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 
 	//UI commandsi
 
+	//TODO no directory for /geometry/cryostat ???
+
 	geomDir = new G4UIdirectory("/geometry/");
 	geomWLSRDir = new G4UIdirectory("/geometry/wlsr/");
 	geomInnerShroudDir = new G4UIdirectory("/geometry/innerShroud/");
 	geomOuterShroudDir = new G4UIdirectory("/geometry/outerShroud/");
+	geomGeDir = new G4UIdirectory("/geometry/Ge/");
 	opticsDir = new G4UIdirectory("/optics/");
 
 	updateCmd = new G4UIcmdWithoutParameter("/update",this);
@@ -72,6 +75,24 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 	cryostatWallThicknessCmd->SetDefaultValue(10*mm);
 	cryostatWallThicknessCmd->SetGuidance("Set the thickness of the cryostat wall");
 
+	setGeDiscHeightCmd = new G4UIcmdWithADoubleAndUnit("/geometry/Ge/discHeight", this);
+	setGeDiscHeightCmd->SetGuidance("set the height of a single Ge detector");
+
+	setGeDiscRadCmd = new G4UIcmdWithADoubleAndUnit("/geometry/Ge/discRadius", this);
+	setGeDiscRadCmd->SetGuidance("set the radius of a single Ge detector");
+
+	setGeDiscGapCmd = new G4UIcmdWithADoubleAndUnit("/geometry/Ge/discGap", this);
+	setGeDiscGapCmd->SetGuidance("set the gap distance (z-direction) between 2 Ge detectors");
+
+	setGeArrayRadCmd = new G4UIcmdWithADoubleAndUnit("/geometry/Ge/arrayRadius", this);
+	setGeArrayRadCmd->SetGuidance("set the radius of the whole array (from center to string axis)");
+
+	setNrGeDetPerStringCmd = new G4UIcmdWithAnInteger("/geometry/Ge/discPerString", this);
+	setNrGeDetPerStringCmd->SetGuidance("set the number of Ge detectors to be stacked together to a single string");
+
+	setNrGeStringsCmd = new G4UIcmdWithAnInteger("/geometry/Ge/nrStrings", this);
+	setNrGeStringsCmd->SetGuidance("set the total number of strings");
+
 	lArAbsLengthCmd = new G4UIcmdWithADoubleAndUnit("/optics/lArAbsLength", this);
 	lArAbsLengthCmd->SetDefaultValue(20*cm);
 	lArAbsLengthCmd->SetGuidance("Set absorption length of LAr scintillation light in LAr");
@@ -92,16 +113,14 @@ L200DetectorMessenger::L200DetectorMessenger(L200DetectorConstruction* thedet) :
 	lArIsRayCmd->SetDefaultValue(false);
 	lArIsRayCmd->SetGuidance("Set if Ray Scattering can occur in LAr");
 
+	setBlackWLSRCmd = new G4UIcmdWithABool("/optics/setBlackWLSR", this);
+	setBlackWLSRCmd->SetDefaultValue(false);
+	setBlackWLSRCmd->SetGuidance("true-> make the TPB on the WLSR black");
+
 
 }
 
 L200DetectorMessenger::~L200DetectorMessenger(){
-
-	delete geomDir;
-	delete geomInnerShroudDir;
-	delete geomOuterShroudDir;
-	delete geomWLSRDir;
-	delete opticsDir;
 
 	delete innerShroudInnerRadiusCmd;
 	delete innerShroudOuterRadiusCmd;
@@ -121,6 +140,14 @@ L200DetectorMessenger::~L200DetectorMessenger(){
 	delete tpbScintWLCmd;
 	delete updateCmd;
 	delete lArIsRayCmd;
+
+	delete geomInnerShroudDir;
+	delete geomOuterShroudDir;
+	delete geomWLSRDir;
+
+	delete geomDir;		//delete directory after contents
+
+	delete opticsDir;
 }
 
 void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
@@ -169,6 +196,20 @@ void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
 		det->setcryostatWallThickness(cryostatWallThicknessCmd->GetNewDoubleValue(value));
 
 	}
+	if(command == setGeDiscHeightCmd){
+		det->setGeDiscHeight(setGeDiscHeightCmd->GetNewDoubleValue(value));
+	}else if(command == setGeDiscRadCmd){
+		det->setGeDiscRad(setGeDiscRadCmd->GetNewDoubleValue(value));
+	}else if(command == setGeDiscGapCmd){
+		det->setGeDiscGap(setGeDiscGapCmd->GetNewDoubleValue(value));
+	}else if(command == setGeArrayRadCmd){
+		det->setGeArrayRad(setGeArrayRadCmd->GetNewDoubleValue(value));
+	}else if(command == setNrGeDetPerStringCmd){
+		det->setNrGeDetPerString(setNrGeDetPerStringCmd->GetNewIntValue(value));
+	}else if(command == setNrGeStringsCmd){
+		det->setNrGeStrings(setNrGeStringsCmd->GetNewIntValue(value));
+	}
+
 	if(command == lArAbsLengthCmd){
 		det->setlArAbsVUV(lArAbsLengthCmd->GetNewDoubleValue(value));
 
@@ -192,6 +233,10 @@ void L200DetectorMessenger::SetNewValue(G4UIcommand* command, G4String value){
 	if(command == lArIsRayCmd){
 		det->setlArRay(lArIsRayCmd->GetNewBoolValue(value));
 	}
+	if(command == setBlackWLSRCmd){
+		det->setBlackWLSR(setBlackWLSRCmd->GetNewBoolValue(value));
+	}
+	
 
 
 

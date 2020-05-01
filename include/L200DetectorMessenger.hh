@@ -6,6 +6,7 @@
 #include "G4UIcmdWithADoubleAndUnit.hh"
 #include "G4UIcmdWithoutParameter.hh"
 #include "G4UIcmdWithABool.hh"
+#include "G4UIcmdWithAnInteger.hh"
 #include "globals.hh"
 
 
@@ -25,6 +26,8 @@ private:
 	G4UIdirectory* geomInnerShroudDir;
 	G4UIdirectory* geomOuterShroudDir;
 	G4UIdirectory* geomWLSRDir;
+	G4UIdirectory* geomGeDir;
+
 	G4UIdirectory* opticsDir;
 
 	G4UIcmdWithADoubleAndUnit* innerShroudInnerRadiusCmd;
@@ -39,11 +42,27 @@ private:
 	G4UIcmdWithADoubleAndUnit* wlsrCuThicknessCmd;
 	G4UIcmdWithADoubleAndUnit* wlsrTetraTexThicknessCmd;
 	G4UIcmdWithADoubleAndUnit* cryostatWallThicknessCmd;
+
+	G4UIcmdWithADoubleAndUnit* setGeDiscHeightCmd;
+	G4UIcmdWithADoubleAndUnit* setGeDiscRadCmd;
+	G4UIcmdWithADoubleAndUnit* setGeDiscGapCmd;
+	G4UIcmdWithADoubleAndUnit* setGeArrayRadCmd;
+	G4UIcmdWithAnInteger* setNrGeDetPerStringCmd;
+	G4UIcmdWithAnInteger* setNrGeStringsCmd;
+
 	G4UIcmdWithADoubleAndUnit* lArAbsLengthCmd;
 	G4UIcmdWithADoubleAndUnit* visAbsLengthCmd;
 	G4UIcmdWithADoubleAndUnit* lArScintWLCmd;
 	G4UIcmdWithADoubleAndUnit* tpbScintWLCmd;
 	G4UIcmdWithABool*	   lArIsRayCmd;
+	G4UIcmdWithABool*	   setBlackWLSRCmd;
+
 	G4UIcmdWithoutParameter*   updateCmd;
 };
 #endif
+
+
+
+
+
+

@@ -355,8 +355,8 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 	    	   if(actualVolume == "innerShroud" || actualVolume == "outerShroud"){
 	    		if(preVolume == "larVolume"){
 					//See if the photon gets into the fiber and absorbed
-					if(p <= fiberAbsProb*fiberDetProb){
-						if(verbosity>3){G4cout << "Yeees photon absorbed with a probabiltity of " << p << " < " << fiberAbsProb << G4endl;}
+					if(p <= fiberAtt(step)*fiberDetProb){
+						if(verbosity>3){G4cout << "Yeees photon absorbed with a probabiltity of " << p << " < " << fiberAtt(step) << G4endl;}
 						mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
 						step->GetTrack()->SetTrackStatus(fStopAndKill);
 					}
@@ -411,14 +411,23 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 			G4cout <<"Changing momentum dir from ";
 			G4cout << step->GetPreStepPoint()->GetMomentumDirection() << " to ";
 			G4cout << step->GetPostStepPoint()->GetMomentumDirection() << G4endl;
+
+
+			G4cout << "PreVoliume: " << step->GetPreStepPoint()->GetPhysicalVolume()->GetName() << G4endl;
+			G4cout << "PostVolium: " << step->GetPostStepPoint()->GetPhysicalVolume()->GetName() << G4endl;
 		}
+
+
 		//Here only roll for absorbtion since we already rolled in Boundary class for detection
-		if(p <= fiberAbsProb){
-			if(verbosity>3){G4cout << "Yeees 128 nm photon absorbed with a probabiltity of " << fiberAbsProb << G4endl;}
-			mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
-			step->GetTrack()->SetTrackStatus(fStopAndKill);
+		 if(step->GetPostStepPoint()->GetPhysicalVolume() != step->GetPreStepPoint()->GetPhysicalVolume()){
+		//if(p <= fiberAbsProb){
+		if(p <= fiberAtt(step)){
+				mra->increment(fVolIDMap[step->GetPostStepPoint()->GetPhysicalVolume()]);
+								if(verbosity>3){G4cout << "Yeees 128 nm photon absorbed with a probabiltity of " << fiberAtt(step) << G4endl;}
 
 		}
+		step->GetTrack()->SetTrackStatus(fStopAndKill);
+}
 	    break;
         default:
 		if(verbosity>3)G4cout << "Unknown Photon-boundary-Action @ "<<actualVolume <<": "<<boundaryStatus<< G4endl;
@@ -586,6 +595,35 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
       fIRep.push_back(vol->GetReplicaNumber());
 
       if(fOption == kStepWise) WriteRow(man);
+    }
+
+    //Based on bachelor thesis Patrick Krause
+    G4double fiberAtt(const G4Step *step){
+
+	const G4double I1 = 0.042; //trapped in core prob
+	const G4double I2 = 0.068; //trapped in core + first cladding prob
+	const G4double I3 = 0.209; //trapped in core + first cladding + second cladding prob
+	const G4double attL =3900*mm;
+	const G4double attS =225*mm;
+
+	G4Tubs* shroud = dynamic_cast<G4Tubs*>( step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetSolid());
+	G4double fiberLengthHalf = shroud->GetZHalfLength();
+
+	G4double curZdir = step->GetPostStepPoint()->GetMomentumDirection().z();
+	G4double curZ = step->GetPostStepPoint()->GetPosition().z() + fiberLengthHalf;
+	G4double x=curZ;
+
+	if(G4UniformRand()<=0.5)
+		x= 2.*fiberLengthHalf-curZ;
+	G4double intensity =I2*exp(-x/attL) + (I3 - I2)*exp(-x/attS);
+
+	if(verbosity>3){
+		G4cout << "Investigate the photon at z+fiberLengthHalf: " << curZ << G4endl;
+		G4cout << "We calculate the travel length in the fiber to be: "<< x << G4endl;
+	}
+
+	return intensity;
+
     }
 
 };		//END of Stepping Action Class Definition/Declaration

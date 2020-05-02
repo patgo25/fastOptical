@@ -341,8 +341,10 @@ G4VPhysicalVolume* L200DetectorConstruction::ConstructDetector(){
 	BuildOuterShroud();
 	G4cout << "Lower WSLR" << G4endl;
 	BuildWSLRCopper();
-	BuildWSLRTetra();
-	BuildWSLRTPB();
+	if(!wlsrBlack){
+		BuildWSLRTetra();
+		BuildWSLRTPB();
+	}
 	G4cout << "Now come the detectors!"<<G4endl;
 	BuildGeDetectors();
 	G4cout << "Build optics" << G4endl;
@@ -631,26 +633,27 @@ void L200DetectorConstruction::UpdateGeometry()
 
 void L200DetectorConstruction::BuildOptics()
 {
-	//TPB <-> LAr
-    	G4OpticalSurface* osIn = new G4OpticalSurface("LArToTPB",unified,ground,dielectric_dielectric,.5);
 	const G4int NUM = 2;
 	G4double photonEnergy[NUM] = {lambdaE/(tpbWL), lambdaE/(lArWL)};
-	G4double tpbRefIndex[NUM] = {1.635,1.635};
-	G4MaterialPropertiesTable *mptInTPB = new G4MaterialPropertiesTable();
-	mptInTPB->AddProperty("RINDEX",photonEnergy,tpbRefIndex,NUM);
-	osIn->SetMaterialPropertiesTable(mptInTPB);
+	if(!wlsrBlack){
+	//TPB <-> LAr
+    		G4OpticalSurface* osIn = new G4OpticalSurface("LArToTPB",unified,ground,dielectric_dielectric,.5);
+		G4double tpbRefIndex[NUM] = {1.635,1.635};
+		G4MaterialPropertiesTable *mptInTPB = new G4MaterialPropertiesTable();
+		mptInTPB->AddProperty("RINDEX",photonEnergy,tpbRefIndex,NUM);
+		osIn->SetMaterialPropertiesTable(mptInTPB);
 
-	new G4LogicalBorderSurface("LAr_TO_WLSRTPB",lArPhys,wslrTPBPhys,osIn);
-	new G4LogicalBorderSurface("WLSRTPB_TO_LAr",wslrTPBPhys,lArPhys,osIn);
+		new G4LogicalBorderSurface("LAr_TO_WLSRTPB",lArPhys,wslrTPBPhys,osIn);
+		new G4LogicalBorderSurface("WLSRTPB_TO_LAr",wslrTPBPhys,lArPhys,osIn);
 
-	//Tetratex
-	G4OpticalSurface* sf = new G4OpticalSurface("TetraTex_Surface",unified,groundfrontpainted, dielectric_dielectric);
-	G4double tetraReflectivity[NUM] = {0.95,0.95};
-	G4MaterialPropertiesTable *mptIntetra = new G4MaterialPropertiesTable();
-	mptIntetra->AddProperty("REFLECTIVITY",photonEnergy,tetraReflectivity,NUM);
-	sf->SetMaterialPropertiesTable(mptIntetra);
-	new G4LogicalSkinSurface("TetraTex_Surface",wslrTetraTexPhys->GetLogicalVolume(),sf);
-
+		//Tetratex
+		G4OpticalSurface* sf = new G4OpticalSurface("TetraTex_Surface",unified,groundfrontpainted, dielectric_dielectric);
+		G4double tetraReflectivity[NUM] = {0.95,0.95};
+		G4MaterialPropertiesTable *mptIntetra = new G4MaterialPropertiesTable();
+		mptIntetra->AddProperty("REFLECTIVITY",photonEnergy,tetraReflectivity,NUM);
+		sf->SetMaterialPropertiesTable(mptIntetra);
+		new G4LogicalSkinSurface("TetraTex_Surface",wslrTetraTexPhys->GetLogicalVolume(),sf);
+	}
 
 	//optical stuff for cu
 	G4OpticalSurface* sfcu = new G4OpticalSurface("Cu_surface",unified,ground,dielectric_metal,0.5);

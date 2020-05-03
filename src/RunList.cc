@@ -8,7 +8,7 @@ RunList::RunList(L200ParticleGenerator* generator, MapRunAction* mra)
 {
  	analysis = G4Root::G4AnalysisManager::Instance();
     //openFile();
-	
+
 	writeDir = new G4UIdirectory("/write/");
   writeDir->SetGuidance("Output file properties");
 
@@ -63,7 +63,7 @@ void RunList::openFile(){
     //ntuples are declared BEFORE the actual file is opened
     //see G4Simple for the reason
     //see lines 242 ff
-    analysis->CreateNtuple("map","geant4 map data");		
+    analysis->CreateNtuple("map","geant4 map data");
     analysis->CreateNtupleDColumn("xPos");//D for double
     analysis->CreateNtupleDColumn("yPos");
     analysis->CreateNtupleDColumn("zPos");
@@ -75,7 +75,7 @@ void RunList::openFile(){
     analysis->SetFileName(filename);
     std::cout << "Opening file " << analysis->GetFileName() << std::endl;
     analysis->OpenFile();
-    
+
     clearVars();
 }
 

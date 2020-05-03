@@ -93,9 +93,9 @@ int L200ParticleGenerator::nextVoxel(){
 		  G4double z = zMin + iBinZ*fBinWidth;
 		  //G4cout<<"Generating point randomly ("<<x<<","<<y<<","<<fZ<<")"<<G4endl;
 
-		currentVoxel.xPos = x;
-		currentVoxel.yPos = y;
-		currentVoxel.zPos = z;				//TODO here if z free
+		currentVoxel.xPos = x + fCenterVector.getX();
+		currentVoxel.yPos = y + fCenterVector.getY();
+		currentVoxel.zPos = z + fCenterVector.getZ();
 
 		currentVoxel.xWid = fBinWidth;
 		currentVoxel.yWid = fBinWidth;
@@ -203,7 +203,10 @@ void L200ParticleGenerator::GeneratePrimaryVertex(G4Event *event)
     DirectionDecider();
 
     //determine particle position
-    PositionDecider(currentVoxel.xPos,currentVoxel.yPos,currentVoxel.zPos,fBinWidth);
+    PositionDecider(currentVoxel.xPos,
+		    currentVoxel.yPos,
+		    currentVoxel.zPos,
+		    fBinWidth);
     //if(fCurrentPosition == G4ThreeVector(1000000,1000000,1000000))return;// break;
 	if(larFailed){		//fail bit arrived from position decider
 		if(abortOnNonlar){

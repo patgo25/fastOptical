@@ -57,8 +57,8 @@ L200ParticleGeneratorMessenger::L200ParticleGeneratorMessenger(L200ParticleGener
   fLiquidArgonSetCenterVector->SetUnitCategory("Length");
   fLiquidArgonSetCenterVector->SetUnitCandidates("micron mm cm m km");
 
-  fLiquidArgonSet1D = new G4UIcmdWithABool("/generator/Set1D",this);
-  fLiquidArgonSet1D->SetGuidance("Set if the voxel probing is 1 or two dimensional");
+  fLiquidArgonSetD = new G4UIcmdWithAnInteger("/generator/SetDimension",this);
+  fLiquidArgonSetD->SetGuidance("Set if the dimension of the voxel probing");
 
   fSetVerboseCmd = new G4UIcmdWithAnInteger("/generator/verbose",this);
   fSetVerboseCmd->SetGuidance("Sets verbosity of generator.");
@@ -70,14 +70,14 @@ L200ParticleGeneratorMessenger::L200ParticleGeneratorMessenger(L200ParticleGener
 
 L200ParticleGeneratorMessenger::~L200ParticleGeneratorMessenger()
 {
-  
+
   delete fLiquidArgonSetRadius;
   delete fLiquidArgonSetRadiusMin;
   delete fLiquidArgonSetHeight;
   delete fLiquidArgonSetCenterVector;
   delete fLiquidArgonSetBinWidth;
   delete fLiquidArgonSetNParticles;
-  delete fLiquidArgonSet1D;
+  delete fLiquidArgonSetD;
   delete fSetVerboseCmd;
   delete fAbortNonlarCmd;
 
@@ -105,8 +105,8 @@ void L200ParticleGeneratorMessenger::SetNewValue(G4UIcommand *cmd, G4String str)
   else if(cmd == fLiquidArgonSetCenterVector){
     fLiquidArgonGenerator->SetCenterVector(fLiquidArgonSetCenterVector->GetNew3VectorValue(str));
   }
-  else if(cmd == fLiquidArgonSet1D){
-    fLiquidArgonGenerator->is1DScan(fLiquidArgonSet1D->GetNewBoolValue(str));
+  else if(cmd == fLiquidArgonSetD){
+    fLiquidArgonGenerator->setDimScan(fLiquidArgonSetD->GetNewIntValue(str));
   }else if(cmd == fSetVerboseCmd){
 		fLiquidArgonGenerator->setVerbosity(fSetVerboseCmd->GetNewIntValue(str));
 	  }else if (cmd = fAbortNonlarCmd){

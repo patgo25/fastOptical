@@ -43,53 +43,69 @@ L200ParticleGenerator::~L200ParticleGenerator()
 
 int L200ParticleGenerator::nextVoxel(){
 
-	abortVoxel = false;	
-			
-	//#### Part I: make voxel pattern over 1st quadrant ### 
+	abortVoxel = false;
+
+	//#### Part I: make voxel pattern over 1st quadrant ###
 	G4double xMax = fRadiusMax;
 	G4double xMin = 0.;//-fRadiusMax;
   	G4int xBins = (xMax-xMin)/fBinWidth;///fRadiusMax*2/fBinWidth;
-  	G4double yMax  = fRadiusMax; 
+  	G4double yMax  = fRadiusMax;
 	G4double yMin = 0.;//-fRadiusMax;
   	G4int yBins = (yMax-yMin)/fBinWidth;//fRadiusMax*2/fBinWidth;
-	if(fis1D){
+	G4int zBins = 1;
+	G4double zMin = fZ;
+	G4double zMax = fZ;
+
+	switch(fDim){
+	case 1:
 		yMax = 0;
 		yMin = 0;
 		yBins = 1;
 		xMin = 0;
 		xBins = fRadiusMax/fBinWidth;
+		break;
+	case 2:
+		break;
+	case 3:
+		zMin = -fZ; //TODO atm only symetric scan (+-fZ), too lazy to implement a new macro cmd...
+		zBins = (zMax-zMin)/fBinWidth;
+		break;
+	default:
+		break;
 	}
+
   if(flatVoxelIndex == 0 && verbosity >= 1){
     G4cout<<"N bins XY "<<xBins*yBins<<" x/y Max "<<xMax/cm<<"(cm), x/y Min "<<fRadiusMin/cm<<"(cm), Z "<<fZ<<"(cm), binWidth "<<fBinWidth/cm<<"(cm)..."<< fNParticles<<" particles per voxel, with "<<fNParticles*xBins*yBins<<" photons generated"<<G4endl;
   }
 
 	//### Part II: define dimensions of current voxel; skipping if exceeds angle ###
 	while(true){	//loop should not affect 1D case (break always after 1st call)
-		if(flatVoxelIndex == xBins*yBins) return 0;		//escape condition
+		if(flatVoxelIndex == xBins*yBins*zBins) return 0;		//escape condition
 
 		//decide indices
-		int iBinY = flatVoxelIndex / xBins;		//int division @ wörk
-		int iBinX = flatVoxelIndex % xBins;
-
+		int iBinZ = flatVoxelIndex / (xBins*yBins);		//int division @ wörk
+		int iBinY = (flatVoxelIndex-iBinZ*xBins*yBins)/xBins;
+		int iBinX = flatVoxelIndex-iBinZ*xBins*yBins - iBinY*xBins;
 
 		//decide positions
 		  G4double x = xMin + iBinX*fBinWidth;
 		  G4double y = yMin + iBinY*fBinWidth;
+		  G4double z = zMin + iBinZ*fBinWidth;
 		  //G4cout<<"Generating point randomly ("<<x<<","<<y<<","<<fZ<<")"<<G4endl;
 
 		currentVoxel.xPos = x;
 		currentVoxel.yPos = y;
-		currentVoxel.zPos = fZ;				//TODO here if z free
+		currentVoxel.zPos = z;				//TODO here if z free
 
 		currentVoxel.xWid = fBinWidth;
-		currentVoxel.yWid = fBinWidth;			
-		currentVoxel.zWid = 0.;				//currently  not passed to decider...
-		
+		currentVoxel.yWid = fBinWidth;
+		currentVoxel.zWid = fBinWidth;
+
 		//escape skip loop in case bottom right point of voxel within angle
 		// and bottom left point is still within radius
-		if(currentVoxel.yPos <= tan(scanAngle)*(currentVoxel.xPos+currentVoxel.xWid) && 
+		if(currentVoxel.yPos <= tan(scanAngle)*(currentVoxel.xPos+currentVoxel.xWid) &&
 			currentVoxel.xPos*currentVoxel.xPos+currentVoxel.yPos*currentVoxel.yPos <= fRadiusMax*fRadiusMax) break;
-		
+
 		if(verbosity >= 3) G4cout << "Skipping voxel "<<currentVoxel<<" for symmetry reasons" << G4endl;
 
 		flatVoxelIndex++;	//increment if volume skipped

@@ -47,7 +47,7 @@ class L200ParticleGenerator
     void SetCenterVector(G4ThreeVector vec){fCenterVector = vec;}
     void SetBinWidth(G4double width) {fBinWidth = width;}
     void SetNParticles(G4double N) {fNParticles = N;}
-    void is1DScan(G4bool b){fis1D =b;}
+    void setDimScan(G4int b){fDim =b;}
 	void setVerbosity(G4int verbose){verbosity = verbose;};
 	void setAbortOnNonlar(G4bool flag){abortOnNonlar = flag;};
 
@@ -63,24 +63,24 @@ class L200ParticleGenerator
   private:
     static const G4double LambdaE;
     G4ParticleGun*	fParticleGun;
-	G4int verbosity;	
-	
+	G4int verbosity;
+
     //particle properties
     G4double  fCurrentEnergy; // energy of current particle
     G4ThreeVector fCurrentPosition; // current position of particle
     G4ThreeVector fDirection; // direction of momentum
-    G4double fRadiusMax = 0;		//radius directly affects x from/to; y borders 
+    G4double fRadiusMax = 0;		//radius directly affects x from/to; y borders
 								//dynamically calculated from xPos & scanAngle
     G4double fRadiusMin = 0;
     G4double fZ = 0;
     G4double fBinWidth = 0;
 	G4double scanAngle;		//defines y borders as from 0 to at least x*tan(scanAngle)
-		
+
     G4double fNParticles = 1;
     G4ThreeVector fCenterVector;
     G4String fParticleType = "opticalphoton";
     G4double fEnergy = 0;
-    G4bool fis1D = true;
+    G4int fDim = 1;
     G4double fLArWL;
 	G4bool abortOnNonlar;		//if a single non-LAr hit should abort the whole voxel
 

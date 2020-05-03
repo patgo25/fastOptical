@@ -35,7 +35,7 @@ private:
   G4UIcmdWith3VectorAndUnit* fLiquidArgonSetCenterVector;
   G4UIcmdWithADoubleAndUnit* fLiquidArgonSetBinWidth;
   G4UIcmdWithADouble* fLiquidArgonSetNParticles;
-  G4UIcmdWithABool* fLiquidArgonSet1D;
+  G4UIcmdWithAnInteger* fLiquidArgonSetD;
   G4UIcmdWithAnInteger* fSetVerboseCmd;
   G4UIcmdWithABool* fAbortNonlarCmd;
 

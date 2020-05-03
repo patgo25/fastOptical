@@ -1,4 +1,4 @@
-/run/verbose 1
+/run/verbose 0
 /event/verbose  0
 /tracking/verbose 0
 
@@ -14,6 +14,8 @@
 # Set GDML file name
 # The bool after the file name turns validation on / off
 /g4simple/setDetectorGDML L200 false
+
+/g4simple/toggleL200Gen true
 
 # Set up output. Choose a format:
 #/g4simple/setOutputFormat csv
@@ -48,13 +50,15 @@
 /generator/verbose 0
 
 #set geometry
-/geometry/innerShroud/innerRadius 122.5 mm
-/geometry/innerShroud/outerRadius 134.5 mm
+/geometry/innerShroud/innerRadius 128.0 mm
+/geometry/innerShroud/outerRadius 129.0 mm
 /geometry/innerShroud/height 1300 mm
+/geometry/innerShroud/zOffset 200 mm
 
-/geometry/outerShroud/innerRadius 283.0 mm
-/geometry/outerShroud/outerRadius 295.0 mm
+/geometry/outerShroud/innerRadius 288.5 mm
+/geometry/outerShroud/outerRadius 289.5 mm
 /geometry/outerShroud/height 1500 mm
+/geometry/outerShroud/zOffset 100 mm
 
 /geometry/wlsr/radius 700 mm
 /geometry/wlsr/height 3500 mm
@@ -64,21 +68,21 @@
 
 /geometry/cryostat/wallThickness 10 mm
 
-/geometry/Ge/discHeight 100 mm
+/geometry/Ge/discHeight 80 mm
 /geometry/Ge/discRadius 40 mm
-/geometry/Ge/discGap 50 mm
+/geometry/Ge/discGap 20 mm
 /geometry/Ge/arrayRadius 200 mm
-/geometry/Ge/discPerString 12
+/geometry/Ge/discPerString 9
 /geometry/Ge/nrStrings 14
 
 #set optics
-/optics/fiberAbsProb .2
 /optics/lArAbsLength 100 cm
 /optics/visAbsLength 10 m
 /optics/lArScintWL 128 nm
 /optics/tpbScintWL 450 nm
 /optics/lArRayToggle false
-/optics/setBlackWLSR false
+/optics/setBlackWLSR true
+
 #update geometry & optics
 /update
 
@@ -105,15 +109,15 @@
 #rad min: only 0 taken by program, even if different in macro
 /generator/SetRadiusMax 700 mm
 /generator/SetRadiusMin 0 mm
-/generator/SetHeight 0 mm
+/generator/SetHeight 450 mm
 /generator/SetBinWidth 10 mm
-/generator/SetNParticles 100
+/generator/SetNParticles 10
 /generator/SetCenterVector 0.0 0.0 0.0 mm
-/generator/Set1D false
+/generator/SetDimension 3
 #should a voxel be aborted (and counted as zero) upon a single non-lar primary?
 /generator/abortOnNonlar true
 
-/write/filename temp.root
+/write/filename tempGERDAWLSR.root
 
 #/run/beamOn 10 NO SUCH STUFF HERE XXX
 

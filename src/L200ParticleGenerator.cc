@@ -67,7 +67,7 @@ int L200ParticleGenerator::nextVoxel(){
 	case 2:
 		break;
 	case 3:
-		zMin = -fZ; //TODO atm only symetric scan (+-fZ), too lazy to implement a new macro cmd...
+		zMin =  0;
 		zBins = (zMax-zMin)/fBinWidth;
 		break;
 	default:

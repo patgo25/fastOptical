@@ -70,6 +70,13 @@ int L200ParticleGenerator::nextVoxel(){
 		zMin =  0;
 		zBins = (zMax-zMin)/fBinWidth;
 		break;
+	case 4:
+		yMin = 0;
+		yMax = 0;
+		yBins = 1;
+		zMin = 0;
+		zBins = (zMax-zMin)/fBinWidth;
+		break;
 	default:
 		break;
 	}
@@ -103,7 +110,7 @@ int L200ParticleGenerator::nextVoxel(){
 
 		//escape skip loop in case bottom right point of voxel within angle
 		// and bottom left point is still within radius
-		if(currentVoxel.yPos <= tan(scanAngle)*(currentVoxel.xPos+currentVoxel.xWid) &&
+		if(currentVoxel.yPos <= tan(scanAngle)*(abs(currentVoxel.xPos)+currentVoxel.xWid) &&
 			currentVoxel.xPos*currentVoxel.xPos+currentVoxel.yPos*currentVoxel.yPos <= fRadiusMax*fRadiusMax) break;
 
 		if(verbosity >= 3) G4cout << "Skipping voxel "<<currentVoxel<<" for symmetry reasons" << G4endl;

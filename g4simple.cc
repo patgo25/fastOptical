@@ -608,9 +608,10 @@ class G4SimpleSteppingAction : public G4UserSteppingAction, public G4UImessenger
 
 	G4Tubs* shroud = dynamic_cast<G4Tubs*>( step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetSolid());
 	G4double fiberLengthHalf = shroud->GetZHalfLength();
+	G4ThreeVector trans = step->GetPostStepPoint()->GetPhysicalVolume()->GetTranslation();
 
 	G4double curZdir = step->GetPostStepPoint()->GetMomentumDirection().z();
-	G4double curZ = step->GetPostStepPoint()->GetPosition().z() + fiberLengthHalf;
+	G4double curZ = step->GetPostStepPoint()->GetPosition().z() + fiberLengthHalf - trans.z();
 	G4double x=curZ;
 
 	if(G4UniformRand()<=0.5)

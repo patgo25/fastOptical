@@ -1,16 +1,38 @@
-# Some fancy LAr simulation for checking efficiency of LAr veto in L200, scanning attenuation lengths while still looking a bit into WLSR dimensions but never touching LAr veto dimensions. That we will do for L1000 ;)
+# A fast optical simulation to track photons in the L200 geometry
 
-TODO: 1. Change title.
+## Goals
 
-My Idea for naming/simulating convention:
+- Sweeping optical parameters/geometries in minutes
+- Utilizing symmetry assumptions
+- Implementing fancy tricks to speed up simulation
 
-0. Simulation Campaign: set of several simulation programs running in parallel (or serial) and scanning individual voxels of the geometry for one fixed attenuation/WLSR size/LAr veto (the latter we swore to never touch)
-1. RunSeries: All which is covered in one single program execution. I suspect to pack several voxels into one RunSeries to minimize overhead to start a large number of single jobs.
-2. Run: =G4Run, i.e. one execution of /run/beamOn with a fixed nr of events to be simulated. ParticleGun setting (--> position, i.e. voxel) is fixed (save maybe for direction change or potential distribution within one voxel) as well as all the rest. Sure we don't touch LAr veto here either.
-3. Event: =G4Event, i.e. all stuff simulated after one single particle gun shot. This is one single 128 nm photon in our case.
-4. Hit: A single hit of the LAr veto instrumenation. By construction: an Event leads to 0 or 1 hit. Want to save position by giving a volumeID. cumulative hits in a single run are added up and stored at a voxel position.
+-> A grey area between the black and white of super precise Monte Carlo MaGe (slow) and back of the envelope calculations. Hence not a replacement for MaGe. First find best fitting parameters with this simulation and then run MaGe once
 
+## Symmetry assumptions
 
+A rotational symmetry of 360/28 deg is assumed (half of a detector string). 4 scan modes (from fastest to slowest runtime):
+- 1D scan: along the x-axis at a defined z-position
+- 2D scan: Scans area to obtain a full map (360/28 deg of the cake) at a defined z-position
+- XZ scan: Scans the XZ plane at a defined y-position
+- 3D scan: Scans area to obtain a full map (360/28 deg of the cake) and a defined z-range
+
+## Fancy tricks
+
+- One of the main reasons why optical simulations are so slow in GEANT4 are the optical border processes. Hence here the amount of opical borders is minimized and at the ctrical places (e.g. LAr volume <-> fiber volume) a costum physics process is implemented.
+
+- Another CPUh black hole is the propagation of the photons in the fiber. This is in this simulation completely avoided by doing an analytical propagation with parameters based on measurements
+
+Again one has to emphasize that this simulation approach can not replace a full Monte Carlo, since all this tricks introduce slight errors from second order processes (e.g. photon leaves fiber during the propagation and couples into another fiber and gets detected. While the analytical model accounts for photons leaving a fiber it does not account for these photons beeing able to couple back into another fiber)
+
+## Results
+- Speed: 20000 - 60000 events/s (Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz) depending on the choosen optical parameters (mainly attenuation length of the LAr). For compharsion MaGe: 500 - 1500 events/s (Intel(R) Xeon(R) CPU E5-2643 v3 @ 3.40GHz)
+- Accuracy: Simulation results agree with the MaGe results
+
+## Future
+
+Harness the power of GPUs which are thanks to the video game industry optimiced for ray tracing?
+
+----
 
 And please use cmake. the makefile is unmaintained as of now
 
